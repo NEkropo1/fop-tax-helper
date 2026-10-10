@@ -100,6 +100,10 @@ How the code is organised and why: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 лишаються на вашому комп'ютері й зберігаються зашифрованими. Запуск: `uv sync`, `npm --prefix web install`,
 `npm --prefix web run build`, токен у `.env`, `uv run mono-it-tax`. Це не податкова консультація.
 
+## License
+
+MIT, see [LICENSE](LICENSE).
+
 ## Contact
 
 Found something outdated or wrong? Write on
