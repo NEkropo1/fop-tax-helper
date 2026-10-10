@@ -1,0 +1,44 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.import_linter_cache/
+.coverage
+htmlcov/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Local data: only the yearly rules in data/rules/ belong to the repository.
+# Everything else (encrypted store, logs, raw bank responses, exports) is personal.
+data/*
+!data/rules/
+*.enc
+*.key
+*.log
+
+# Web
+web/node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# Editors, OS, local tooling
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+.claude/
+CLAUDE.md
+
+# Personal screenshots and notes
+docs/*.jpg
+docs/*.png
+docs/private/

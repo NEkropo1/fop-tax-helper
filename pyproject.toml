@@ -1,0 +1,71 @@
+[project]
+name = "mono-it-tax"
+version = "0.1.0"
+description = "Local helper for Ukrainian FOP (group 3) income on Monobank: marks taxable income, converts with NBU rates, explains the declaration and payments"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "pyyaml>=6.0",
+    "cryptography>=43",
+    "tzdata>=2026.5",
+    "keyring>=25.7.0",
+    "platformdirs>=4.12.4",
+    "fastapi>=0.143.0",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "mypy>=1.11",
+    "ruff>=0.6",
+    "types-pyyaml",
+    "import-linter>=2.15",
+    "hypothesis>=6.168.5",
+    "pytest-cov>=7.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mono_it_tax"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I", "B", "UP", "SIM", "RUF", "S", "PL", "T20",
+    "DTZ", "BLE", "TRY", "FBT", "PTH", "ARG", "C90", "TID", "PT", "LOG", "G",
+]
+ignore = ["RUF001", "RUF002", "RUF003", "TRY003"]  # Ukrainian text is intentional; TRY003: errors carry params, not messages
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"time.sleep".msg = "use the injected Clock"
+"time.monotonic".msg = "use the injected Clock"
+"datetime.datetime.now".msg = "use the injected Clock"
+"datetime.date.today".msg = "use the injected Clock"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "PLR2004", "ARG", "FBT"]
+"src/mono_it_tax/api/routes.py" = ["FBT001", "FBT002"]  # FastAPI query flags are keyword by nature
+"src/mono_it_tax/clock.py" = ["TID251"]  # the only place allowed to touch real time
+"src/mono_it_tax/launcher.py" = ["T201"]  # the launcher prints the local URL
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["smoke: hits real external services; run manually with `pytest -m smoke`"]
+addopts = "-m 'not smoke'"
