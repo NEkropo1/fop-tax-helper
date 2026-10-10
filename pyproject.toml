@@ -16,6 +16,9 @@ dependencies = [
     "uvicorn>=0.30",
 ]
 
+[project.scripts]
+mono-it-tax = "mono_it_tax.launcher:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8",
@@ -68,4 +71,33 @@ files = ["src", "tests"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["smoke: hits real external services; run manually with `pytest -m smoke`"]
-addopts = "-m 'not smoke'"
+addopts = "-m 'not smoke' --cov=mono_it_tax --cov-fail-under=95"
+
+[tool.importlinter]
+root_package = "mono_it_tax"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "layers: imports only point down"
+type = "layers"
+layers = [
+    "mono_it_tax.launcher",
+    "mono_it_tax.api",
+    "mono_it_tax.startup",
+    "mono_it_tax.pipelines",
+    "mono_it_tax.copy",
+    "mono_it_tax.services",
+    "mono_it_tax.clients | mono_it_tax.store",
+    "mono_it_tax.domain",
+    "mono_it_tax.config",
+]
+
+[[tool.importlinter.contracts]]
+name = "domain is pure: no I/O adapters"
+type = "forbidden"
+source_modules = ["mono_it_tax.domain"]
+forbidden_modules = ["mono_it_tax.clients", "mono_it_tax.store", "mono_it_tax.services", "httpx", "keyring"]
+
+[tool.coverage.run]
+# The real OS keyring adapter cannot run in unit tests; the smoke tests / a human exercise it.
+omit = ["src/mono_it_tax/store/keyring_backend.py"]
