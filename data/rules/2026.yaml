@@ -1,0 +1,68 @@
+# ФОП group 3 rules for 2026. EVERY value is a claim: see `sources`. Maintained by hand; the app only
+# reads it. Bump `version` / `updated_on` whenever a human re-checks the numbers.
+version: "2026.3"
+updated_on: 2026-10-10
+year: 2026
+group: 3
+minimum_wage_uah: "8647"            # monobank knowledge base / buhgalter911
+esv_rate: "0.22"                    # 22% of minimum wage per month (minimum contribution)
+single_tax:                         # 5% without VAT -> rows 06/11. A VAT payer (3%) would be 05/10.
+  rate: "0.05"
+  income_row: "06"
+  tax_row: "11"
+  note: "для неплатників ПДВ — найпоширеніший випадок; платникам ПДВ на 3% відповідає рядок 05"
+military_levy_rate: "0.01"          # 1% of income
+income_limit_uah: "10091049"
+sources:
+  - https://monobank.ua/en/knowledge-base/fop/fop-3-grupa-2026
+  - https://buhgalter911.com/uk/news/news-1091019.html
+  - https://buhplatforma.com.ua/news/128232-fop-3-grupa-kalendar-zvitnosti-ta-splaty-podatkiv-za-iii-kvartal-2026-roku-shpargalka
+# Deadlines relative to the end of the reporting quarter. A deadline on a weekend moves to Monday
+# (public holidays are NOT modelled: check the date in the e-cabinet calendar).
+deadlines:
+  declaration_days_after_quarter_end: 40   # Q3 2026 -> 9 Nov
+  single_tax_days_after_quarter_end: 50    # Q3 2026 -> 19 Nov (ЄП and ВЗ)
+  esv_day_of_next_month: 19                # Q3 2026 -> 19 Oct (decided per official docs)
+declaration:
+  form: F0103309
+  order: "Мінфін 19.06.2015 №578 (ред. 31.01.2025 №57)"
+  # Row numbers and labels verified against the live form in the e-cabinet
+  # (2026-10-10): sections IV (05-07), V (08-14), VI (15-20), VII (21), VIII (22-29).
+  # Numbered FIELDS of the form header/section I (not rows): verified against the live form.
+  fields:
+    office: "4"       # name of the tax office the declaration goes to
+    taxpayer: "5"     # taxpayer name (also 6 address, 7 tax id, 10 KVED are pulled from the registry)
+    employees: "9"    # actual number of hired employees in the period
+  rows:
+    income_15: "07"
+    total_income: "08"
+    tax_total: "12"
+    tax_previous: "13"
+    tax_due_base: "14.1"   # 12 - 13
+    tax_due_extra: "14.2"  # agricultural MPZ: not supported, stays empty
+    tax_due: "14"          # 14.1 + 14.2
+    esv_due: "21"          # only in the ANNUAL declaration, from Додаток 1 (section 9, Усього, col. 4)
+    levy_total: "23"
+    levy_previous: "24"
+    levy_due: "25"
+  # Rows that must stay empty / 0.00 for this taxpayer: groups 1-2 (01-04), 15% income (07, 09),
+  # agricultural MPZ (14.2), error corrections (15-20, 26-29), groups 1-2 levy (22).
+  empty_rows: ["01", "02", "03", "04", "07", "09", "14.2", "15", "16", "17", "18", "19", "20", "22", "26", "27", "28", "29"]
+budget_codes:   # as shown in cabinet.tax.gov.ua/tax-account (2026-10)
+  military_levy: "11011700"
+  single_tax: "18050400"
+  esv: "71040000"
+links:
+  cabinet: "https://cabinet.tax.gov.ua/"
+  tax_account: "https://cabinet.tax.gov.ua/tax-account"
+  new_declaration: "https://cabinet.tax.gov.ua/reporting/doc"   # create a declaration here
+  requisites_xlsx: "https://tax.gov.ua/rahunki-dlya-splati-platejiv"
+  declaration_video: "https://www.youtube.com/watch?v=qijvTwUqw08"   # Smokovych walk-through
+channels:
+  - {name: Smokovych, url: "https://www.youtube.com/@-Smokovych/"}
+contact: {linkedin: "https://www.linkedin.com/in/paul-savchuk-ne/"}
+# Hint only (the human decides): MCC "money transfer" + wording seen on real statements.
+internal_transfer:
+  mcc: 4829
+  description_prefixes: ["З Білої картки", "З картки", "З рахунку", "З банки"]
+disclaimer: "Not tax advice. Figures can be outdated; check the channel above, the e-cabinet, or write to the author on LinkedIn."
