@@ -1,0 +1,90 @@
+from datetime import date
+from decimal import Decimal
+
+import pytest
+
+from mono_it_tax.config.enums import Currency, Period, Tax
+from mono_it_tax.domain.declaration import build_declaration
+from mono_it_tax.domain.estimate import estimate
+from mono_it_tax.domain.income import Mark, counted_amount, income_uah, to_uah
+from mono_it_tax.domain.payment_plan import build_plan, next_working_day
+from mono_it_tax.errors import RateMissingError
+from tests.support import make_payment, make_rules
+
+D = Decimal
+RULES = make_rules()
+
+
+def test_weekend_deadline_moves_to_monday() -> None:
+    assert next_working_day(date(2026, 8, 9)) == date(2026, 8, 10)  # Sunday
+    assert next_working_day(date(2026, 8, 8)) == date(2026, 8, 10)  # Saturday
+    assert next_working_day(date(2026, 8, 10)) == date(2026, 8, 10)  # Monday stays
+
+
+def test_third_quarter_2026_matches_the_accountants_note() -> None:
+    rows = build_declaration(Period.Q1, 2026, D(0), None, RULES)
+    rows = type(rows)(**{**rows.__dict__, "period": Period.M9})
+    plan = build_plan(rows, RULES)
+    by_tax = {p.tax: p for p in plan.payments}
+    assert by_tax[Tax.ESV].amount == D("5707.02")
+    assert by_tax[Tax.ESV].due == date(2026, 10, 19)
+    assert plan.declaration_due == date(2026, 11, 9)
+    assert by_tax[Tax.SINGLE_TAX].due == by_tax[Tax.MILITARY_LEVY].due == date(2026, 11, 19)
+    assert by_tax[Tax.SINGLE_TAX].budget_code == RULES.budget_codes[Tax.SINGLE_TAX]
+
+
+def test_half_year_declaration_deadline_shifts_off_sunday() -> None:
+    rows = build_declaration(Period.Q1, 2026, D(0), None, RULES)
+    h1 = type(rows)(**{**rows.__dict__, "period": Period.H1})
+    assert build_plan(h1, RULES).declaration_due == date(2026, 8, 10)
+
+
+def test_annual_esv_falls_in_january_of_next_year() -> None:
+    rows = build_declaration(Period.Q1, 2026, D(0), None, RULES)
+    year_rows = type(rows)(**{**rows.__dict__, "period": Period.Y})
+    esv = next(p for p in build_plan(year_rows, RULES).payments if p.tax is Tax.ESV)
+    assert esv.due == date(2027, 1, 19)
+
+
+def test_counted_amount_uses_override_else_bank_amount() -> None:
+    payment = make_payment(amount=123_456)
+    assert counted_amount(payment, Mark(payment_id="p1")) == D("1234.56")
+    assert counted_amount(payment, Mark(payment_id="p1", amount_override=D("1000"))) == D("1000")
+
+
+def test_override_must_be_positive() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        Mark(payment_id="p1", amount_override=D("0"))
+
+
+def test_foreign_income_uses_the_rate_of_the_receipt_day() -> None:
+    # 2026-09-30 21:30 UTC is 00:30 on 1 October in Kyiv: the Oct 1 rate applies
+    payment = make_payment(amount=10_000, currency=Currency.USD, unix_time=1_790_803_800)
+    assert payment.tax_date == date(2026, 10, 1)
+    rates = {Currency.USD: {date(2026, 9, 30): D("1"), date(2026, 10, 1): D("41.5")}}
+    assert income_uah(payment, Mark(payment_id="p1"), rates) == D("4150.0")
+
+
+def test_missing_rate_fails_loudly() -> None:
+    with pytest.raises(RateMissingError) as exc:
+        to_uah(D("1"), Currency.EUR, date(2026, 1, 1), {})
+    assert exc.value.params == {"currency": "EUR", "date": "2026-01-01"}
+
+
+def test_uah_needs_no_rate() -> None:
+    assert to_uah(D("12.5"), Currency.UAH, date(2026, 1, 1), {}) == D("12.5")
+
+
+def test_months_estimate() -> None:
+    est = estimate(D("100000"), 3, RULES)
+    assert (est.single_tax, est.military_levy, est.esv) == (
+        D("5000.00"),
+        D("1000.00"),
+        D("5707.02"),
+    )
+    assert est.total == D("11707.02")
+
+
+def test_zero_income_estimate_is_only_esv() -> None:
+    est = estimate(D(0), 1, RULES)
+    assert est.total == est.esv == D("1902.34")
