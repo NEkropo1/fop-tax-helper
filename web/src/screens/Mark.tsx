@@ -4,7 +4,7 @@ import { api } from "../api";
 import { copy } from "../copy";
 import { formatMoney } from "../format";
 import { scopeOf, type Flow } from "../flow";
-import { rangeIds } from "../selection";
+import { bulkIds, rangeIds } from "../selection";
 import type { MonthState, Payment, Payments } from "../types";
 import { Card, ErrorBox } from "../ui";
 
@@ -184,9 +184,34 @@ export function Mark({ flow, onNext, onBack }: Props) {
   const allReviewed = months.length > 0 && months.every(([, s]) => s.every((x) => x.state === "reviewed"));
   const pending = months.filter(([, s]) => s.some((x) => x.state !== "reviewed")).map(([m]) => m);
 
+  const lockedMonths = useMemo(
+    () =>
+      new Set(
+        months.filter(([, s]) => s.every((x) => x.state === "reviewed")).map(([month]) => month),
+      ),
+    [months],
+  );
+
+  const markBulk = (month: string | null, marked: boolean) => {
+    const ids = bulkIds(data?.payments ?? [], lockedMonths, month, marked);
+    if (ids.length === 0) return;
+    setError(null);
+    api.mark(flow.year, ids, marked).then(reload).catch(setError);
+  };
+
   return (
     <Card title={copy.mark.title}>
       <p className="muted">{copy.mark.hint}</p>
+      {data !== null && !allReviewed ? (
+        <div className="actions bulk">
+          <button type="button" onClick={() => markBulk(null, true)}>
+            {copy.mark.markAll}
+          </button>
+          <button type="button" onClick={() => markBulk(null, false)}>
+            {copy.mark.unmarkAll}
+          </button>
+        </div>
+      ) : null}
       <ErrorBox error={error} />
       {data === null && error === null ? <p>{copy.loading}</p> : null}
       {months.map(([month, states]) => {
@@ -202,7 +227,18 @@ export function Mark({ flow, onNext, onBack }: Props) {
                 <span className="muted">{copy.mark.marked(marked, total)}</span>{" "}
                 {done ? <span className="badge ok">{copy.mark.reviewed}</span> : null}
               </h3>
-              {done ? <span className="muted">{copy.mark.locked}</span> : null}
+              {done ? (
+                <span className="muted">{copy.mark.locked}</span>
+              ) : (
+                <span className="actions">
+                  <button type="button" onClick={() => markBulk(month, true)}>
+                    {copy.mark.markMonth}
+                  </button>
+                  <button type="button" onClick={() => markBulk(month, false)}>
+                    {copy.mark.unmarkMonth}
+                  </button>
+                </span>
+              )}
             </div>
             {listed.length === 0 ? <p className="muted">{copy.mark.emptyMonth}</p> : null}
             {listed.map((p) => (

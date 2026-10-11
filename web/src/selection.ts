@@ -20,3 +20,19 @@ export function rangeIds(
 export function monthKey(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
+
+/**
+ * Payments that "mark all" / "unmark all" must change: in one month (or every month when `month` is
+ * null), skipping confirmed (locked) months and payments already in the wanted state.
+ */
+export function bulkIds(
+  payments: readonly { id: string; month: string; marked: boolean }[],
+  lockedMonths: ReadonlySet<string>,
+  month: string | null,
+  marked: boolean,
+): string[] {
+  return payments
+    .filter((p) => (month === null || p.month === month) && !lockedMonths.has(p.month))
+    .filter((p) => p.marked !== marked)
+    .map((p) => p.id);
+}

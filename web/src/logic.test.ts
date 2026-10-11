@@ -1,8 +1,28 @@
 import { describe, expect, it } from "vitest";
 
 import { formatDate, formatDuration, formatMoney } from "./format";
-import { monthKey, rangeIds } from "./selection";
+import { bulkIds, monthKey, rangeIds } from "./selection";
 import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
+
+describe("bulkIds", () => {
+  const payments = [
+    { id: "a", month: "2026-07", marked: false },
+    { id: "b", month: "2026-07", marked: true },
+    { id: "c", month: "2026-08", marked: false },
+    { id: "d", month: "2026-09", marked: false },
+  ];
+  const locked = new Set(["2026-09"]);
+  it("marks every unmarked payment of unlocked months", () => {
+    expect(bulkIds(payments, locked, null, true)).toEqual(["a", "c"]);
+  });
+  it("limits the change to one month", () => {
+    expect(bulkIds(payments, locked, "2026-07", true)).toEqual(["a"]);
+    expect(bulkIds(payments, locked, "2026-07", false)).toEqual(["b"]);
+  });
+  it("never touches a confirmed month, even when asked for it", () => {
+    expect(bulkIds(payments, locked, "2026-09", true)).toEqual([]);
+  });
+});
 
 describe("rangeIds", () => {
   const ids = ["a", "b", "c", "d", "e"];
