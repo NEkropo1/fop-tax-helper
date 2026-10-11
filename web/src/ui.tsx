@@ -45,6 +45,15 @@ export function ErrorBox({ error }: { error: unknown }) {
   );
 }
 
+/** Not a blocker: the user may continue, with the latest rules and the warning in view. */
+export function RulesFallbackNotice({ year, usedYear }: { year: number; usedYear: number }) {
+  return (
+    <div className="notice error" role="alert">
+      {copy.rulesFallback(year, usedYear)}
+    </div>
+  );
+}
+
 export function Card({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section className="card">

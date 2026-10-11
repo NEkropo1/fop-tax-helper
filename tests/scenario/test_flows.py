@@ -332,6 +332,17 @@ def test_startup_fails_fast_with_actionable_errors(tmp_path: Path) -> None:
         make_app(tmp_path, FakeBank(), year=2031)
 
 
+def test_a_year_without_rules_uses_the_latest_file_by_the_users_choice(tmp_path: Path) -> None:
+    app, _ = make_app(tmp_path, FakeBank())
+    latest = app.rules_for(2026)
+    fallback = app.rules_or_latest(2025)
+    assert fallback.year == 2025  # relabelled, so the declaration maths accepts it
+    assert fallback.model_copy(update={"year": 2026}) == latest  # every number is the latest file's
+    assert app.rules_or_latest(2026) is latest
+    with pytest.raises(ConfigRulesMissingError):
+        app.rules_for(2025)  # the strict lookup is unchanged
+
+
 def test_the_store_key_is_created_at_startup_and_data_is_encrypted(tmp_path: Path) -> None:
     app, _ = make_app(tmp_path, bank_with_q3_income())
     fetch_all(app, M9, [UAH_ACC])

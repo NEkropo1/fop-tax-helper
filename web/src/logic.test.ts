@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatDate, formatDuration, formatMoney, formatPercent } from "./format";
 import { bulkIds, monthKey, rangeIds } from "./selection";
+import { rulesFallbackYear } from "./flow";
 import { decodeSaved, encodeSaved, safeStep, STATE_VERSION } from "./persist";
 import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
 
@@ -144,6 +145,17 @@ describe("saved wizard state", () => {
   it("accepts a months selection of the same year", () => {
     const selection = { year: 2026, kind: "months", months: ["2026-02", "2026-03"] };
     expect(decodeSaved(raw({ flow: { ...flow, selection } }))?.flow.selection).toEqual(selection);
+  });
+});
+
+describe("rulesFallbackYear", () => {
+  it("is null when the year has rules, or there are none to fall back on", () => {
+    expect(rulesFallbackYear([2025, 2026], 2025)).toBeNull();
+    expect(rulesFallbackYear([], 2025)).toBeNull();
+  });
+  it("is the latest rules year otherwise", () => {
+    expect(rulesFallbackYear([2026], 2025)).toBe(2026);
+    expect(rulesFallbackYear([2024, 2026], 2030)).toBe(2026);
   });
 });
 

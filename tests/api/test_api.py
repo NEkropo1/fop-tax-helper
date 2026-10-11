@@ -125,6 +125,17 @@ def test_account_with_several_cards_lists_every_masked_pan(tmp_path: Path) -> No
     assert accounts[1]["masked_pans"] == []
 
 
+def test_a_year_without_rules_still_gets_help_with_the_latest_rules(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.get(
+        "/api/declaration/previous-request",
+        params={"year": 2025, "period": "H1"},
+        headers=AUTH,
+    )
+    assert response.status_code == 200
+    assert "2025" in response.json()["text"]
+
+
 def test_plan_counts_requests_and_time(tmp_path: Path) -> None:
     client = make_client(tmp_path)
     plan = post(client, "/api/plan", scope(client, only_first=False)).json()

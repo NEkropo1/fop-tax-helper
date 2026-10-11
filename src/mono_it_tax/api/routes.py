@@ -381,7 +381,7 @@ def cancel_review(body: ReviewIn, state: ApiState = Depends(authorized)) -> list
 @router.post("/report/info", response_model=EstimateOut)
 def report_info(scope: ScopeIn, state: ApiState = Depends(authorized)) -> EstimateOut:
     built, selection, ids, _ = _scope(state, scope)
-    return _estimate_out(built, selection, ids, built.rules_for(selection.year))
+    return _estimate_out(built, selection, ids, built.rules_or_latest(selection.year))
 
 
 def _previous(body: DeclarationIn) -> PreviousDeclaration | None:
@@ -409,7 +409,7 @@ def report_declaration(
     accounts_ = built.accounts.accounts(body.year)
     handles = state.ready_handles()
     ids = [handles.resolve(h, accounts_) for h in body.handles]
-    rules = built.rules_for(body.year)
+    rules = built.rules_or_latest(body.year)
     help_ = built.report_pipeline.declaration_help(
         body.year, body.period, ids, rules, _previous(body)
     )
@@ -442,7 +442,7 @@ def previous_request(
     year: int, period: Period, state: ApiState = Depends(authorized)
 ) -> dict[str, str]:
     """Where in the cabinet to find the previous declaration and which rows to copy."""
-    rules = state.ready_app().rules_for(year)
+    rules = state.ready_app().rules_or_latest(year)
     return {"text": previous_report_request(previous_period(period), year, rules)}
 
 

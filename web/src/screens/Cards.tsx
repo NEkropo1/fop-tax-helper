@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 
 import { api } from "../api";
 import { copy } from "../copy";
-import type { Flow } from "../flow";
+import { rulesFallbackYear, type Flow } from "../flow";
 import { YEAR_MAX, YEAR_MIN } from "../limits";
 import type { Account } from "../types";
-import { Card, ErrorBox } from "../ui";
+import { Card, ErrorBox, RulesFallbackNotice } from "../ui";
 
 interface Props {
   flow: Flow;
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export function Cards({ flow, years, onYear, onHandles, onNext }: Props) {
+  const fallbackYear = rulesFallbackYear(years, flow.year);
   const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [yearDraft, setYearDraft] = useState(String(flow.year));
@@ -38,7 +39,7 @@ export function Cards({ flow, years, onYear, onHandles, onNext }: Props) {
   return (
     <Card title={copy.cards.title}>
       <p className="muted">{copy.cards.hint}</p>
-      <label>
+      <label className={fallbackYear === null ? "" : "year-warn"}>
         {copy.cards.year}{" "}
         <input
           type="number"
@@ -61,9 +62,7 @@ export function Cards({ flow, years, onYear, onHandles, onNext }: Props) {
           ))}
         </datalist>
       </label>
-      {years.includes(flow.year) ? null : (
-        <div className="notice warn">{copy.cards.noRules(flow.year)}</div>
-      )}
+      {fallbackYear === null ? null : <RulesFallbackNotice year={flow.year} usedYear={fallbackYear} />}
       <ErrorBox error={error} />
       {accounts === null && error === null ? <p>{copy.loading}</p> : null}
       {accounts?.map((a) => (

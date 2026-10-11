@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api, readToken } from "./api";
 import { copy } from "./copy";
-import { initialFlow, type Flow } from "./flow";
+import { initialFlow, rulesFallbackYear, type Flow } from "./flow";
 import { clearSaved, loadSaved, safeStep, storeSaved } from "./persist";
 import { Cards } from "./screens/Cards";
 import { Confirm } from "./screens/Confirm";
@@ -184,6 +184,7 @@ export function App() {
         key={`${flow.withHistory}`}
         flow={flow}
         rules={meta.rules}
+        fallbackYear={rulesFallbackYear(meta.years, flow.year)}
         onBack={() => go("mark")}
         onStartOver={reset}
         onNeedHistory={() => {

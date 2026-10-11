@@ -6,7 +6,7 @@ import { formatDate, formatMoney, formatPercent } from "../format";
 import { scopeOf, type Flow } from "../flow";
 import type { Declaration, Estimate, PreviousRows, Rules } from "../types";
 import { DeclarationText, SourcesSection } from "../DeclarationText";
-import { Card, ErrorBox } from "../ui";
+import { Card, ErrorBox, RulesFallbackNotice } from "../ui";
 
 type Help = "ask" | "choose" | "typing" | "running" | "shown" | "declined";
 
@@ -17,6 +17,7 @@ const ROW_KEYS = ["income", "row_07", "row_12", "row_23"] as const;
 interface Props {
   flow: Flow;
   rules: Rules | null;
+  fallbackYear: number | null; // the rules year in use when flow.year has no rules file
   onNeedHistory: () => void;
   onBack: () => void;
   onStartOver: () => void;
@@ -98,7 +99,7 @@ function DeclarationView({ declaration, rules }: { declaration: Declaration; rul
   );
 }
 
-export function Result({ flow, rules, onNeedHistory, onBack, onStartOver }: Props) {
+export function Result({ flow, rules, fallbackYear, onNeedHistory, onBack, onStartOver }: Props) {
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [declaration, setDeclaration] = useState<Declaration | null>(null);
   const [help, setHelp] = useState<Help>("ask");
@@ -147,6 +148,7 @@ export function Result({ flow, rules, onNeedHistory, onBack, onStartOver }: Prop
 
   return (
     <Card title={copy.result.title}>
+      {fallbackYear === null ? null : <RulesFallbackNotice year={flow.year} usedYear={fallbackYear} />}
       {estimate ? <EstimateView estimate={estimate} /> : error === null ? <p>{copy.loading}</p> : null}
       <ErrorBox error={error} />
       {needsHistory && !flow.withHistory && !first ? (

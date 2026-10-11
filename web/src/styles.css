@@ -335,6 +335,15 @@ table.fields td:first-child {
   white-space: nowrap;
 }
 
+label.year-warn {
+  color: var(--err);
+  font-weight: 600;
+}
+
+label.year-warn input.year {
+  border-color: var(--err);
+}
+
 .month {
   background: var(--month-bg);
   border: 1px solid var(--line);
