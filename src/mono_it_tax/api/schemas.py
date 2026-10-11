@@ -205,8 +205,10 @@ class RulesOut(BaseModel):
     cabinet: str
     tax_account: str
     new_declaration: str
-    declaration_video: str
-    channels: list[dict[str, str]]
+    legislation: str
+    tax_service: str
+    declaration_video: str | None
+    recommended_sources: list[dict[str, str]]
     linkedin: str
 
 

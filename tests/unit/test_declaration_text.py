@@ -7,7 +7,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from mono_it_tax.config.enums import Period
-from mono_it_tax.config.rules import DeclarationFields, Rules
+from mono_it_tax.config.rules import DeclarationFields, RecommendedSource, Rules
 from mono_it_tax.config.rules import DeclarationRows as RuleRows
 from mono_it_tax.copy.declaration_uk import (
     ESV_ROW_NOT_NEEDED,
@@ -15,7 +15,9 @@ from mono_it_tax.copy.declaration_uk import (
     fill_instructions,
     format_money,
 )
+from mono_it_tax.copy.estimate_uk import format_estimate
 from mono_it_tax.domain.declaration import DeclarationRows, PreviousDeclaration, build_declaration
+from mono_it_tax.domain.estimate import estimate
 from mono_it_tax.domain.payment_plan import build_plan
 from tests.support import make_rules
 
@@ -159,3 +161,32 @@ def test_text_carries_exactly_the_state_values(
     assert ("   - 25 (" in text) == (rows.row_25 > 0)
     assert ("   - 14.1 (" in text) == (rows.row_14 > 0)
     assert PERIOD_LABELS[Period.H1] in text
+
+
+def test_footer_points_to_the_law_and_official_sites_and_names_no_third_party() -> None:
+    text = render(rows_for(Period.Q1, None, "100"))
+    assert RULES.links.legislation in text
+    assert RULES.links.tax_service in text
+    assert "бухгалтером" in text
+    assert "Додаткові джерела" not in text
+    assert "Відео-розбір" not in text
+
+
+def test_third_party_material_returns_with_one_config_entry() -> None:
+    """Quick restore: listing a source / a video in the rules file is all it takes."""
+    restored = make_rules(
+        recommended_sources=(RecommendedSource(name="Name", url="https://example.test/ch"),),
+        links=RULES.links.model_copy(update={"declaration_video": "https://example.test/v"}),
+    )
+    text = render(rows_for(Period.Q1, None, "100", restored), restored)
+    assert "Додаткові джерела: Name (https://example.test/ch)." in text
+    assert "Відео-розбір заповнення декларації: https://example.test/v" in text
+    assert restored.links.legislation in text  # the official sources never go away
+
+
+def test_estimate_text_also_lists_the_official_sources() -> None:
+    rules = make_rules()
+    est = estimate(D("1000"), 1, rules)
+    text = format_estimate(est, rules)
+    assert rules.links.legislation in text
+    assert "Додаткові джерела" not in text

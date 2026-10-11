@@ -10,7 +10,6 @@ import httpx
 
 from mono_it_tax.config.enums import Currency, Tax
 from mono_it_tax.config.rules import (
-    Channel,
     Contact,
     Deadlines,
     Declaration,
@@ -100,9 +99,10 @@ def make_rules(**overrides: Any) -> Rules:
             tax_account="https://cabinet.test/tax-account",
             new_declaration="https://cabinet.test/reporting/doc",
             requisites_xlsx="https://tax.test/xlsx",
-            declaration_video="https://video.test/watch",
+            legislation="https://law.test/code",
+            tax_service="https://tax.test/",
         ),
-        "channels": (Channel(name="Chan", url="https://youtube.test/chan"),),
+        "recommended_sources": (),
         "contact": Contact(linkedin="https://linkedin.test/author"),
         "internal_transfer": InternalTransferRule(
             mcc=4829, description_prefixes=("З Білої картки",)

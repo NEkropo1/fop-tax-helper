@@ -59,12 +59,15 @@ links:
   tax_account: "https://cabinet.tax.gov.ua/tax-account"
   new_declaration: "https://cabinet.tax.gov.ua/reporting/doc"   # create a declaration here
   requisites_xlsx: "https://tax.gov.ua/rahunki-dlya-splati-platejiv"
-  declaration_video: "https://www.youtube.com/watch?v=qijvTwUqw08"   # Smokovych walk-through
-channels:
-  - {name: Smokovych, url: "https://www.youtube.com/@-Smokovych/"}
+  legislation: "https://zakon.rada.gov.ua/laws/show/2755-17"   # Tax Code of Ukraine
+  tax_service: "https://tax.gov.ua/"
+  # declaration_video: "https://example.com/watch"   # optional third-party walkthrough
+# Optional third-party material (channels, blogs). Add an entry ONLY with its owner's consent:
+#   - {name: "Name", url: "https://example.com/"}
+recommended_sources: []
 contact: {linkedin: "https://www.linkedin.com/in/paul-savchuk-ne/"}
 # Hint only (the human decides): MCC "money transfer" + wording seen on real statements.
 internal_transfer:
   mcc: 4829
   description_prefixes: ["З Білої картки", "З картки", "З рахунку", "З банки"]
-disclaimer: "Not tax advice. Figures can be outdated; check the channel above, the e-cabinet, or write to the author on LinkedIn."
+disclaimer: "Not tax advice. Figures can be outdated: check them against the current legislation, the tax service site and the e-cabinet, or write to the maintainer on LinkedIn."

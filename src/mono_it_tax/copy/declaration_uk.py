@@ -1,6 +1,6 @@
 """Declaration help texts (Ukrainian): what to check, what to type, what appears by itself, what to
-pay. Order and wording follow what the cabinet really does (checked 2026-10) and the
-Smokovych video. Every row number comes from the rules file, every amount from the state objects.
+pay. Order and wording follow what the cabinet really does (checked 2026-10).
+Every row number comes from the rules file, every amount from the state objects.
 """
 
 from decimal import Decimal
@@ -120,12 +120,15 @@ FILL_PAYMENTS_HEADER = (
     "автоматизуємо):"
 )
 FILL_PAYMENT_LINE = "   - {label}: {what}, до {due:%d.%m.%Y} (код платежу {code})"
-FOOTER = (
-    "Відео-розбір заповнення декларації: {video}",
-    "Інформація може бути неактуальною: звіряйтесь з каналами — {channels}.",
-    "Помітили неактуальне? Напишіть автору: {linkedin}",
-    "Правила станом на {updated_on:%d.%m.%Y} (версія {version}). {disclaimer}",
+VIDEO_LINE = "Відео-розбір заповнення декларації: {video}"
+SOURCES_LINE = (
+    "Інформація може бути неактуальною. Звіряйте розрахунки та строки з чинним законодавством "
+    "({legislation}), сайтом ДПС ({tax_service}) і зручними для вас професійними джерелами; за "
+    "потреби — з бухгалтером. Рішення й відповідальність за декларацію — ваші."
 )
+EXTRA_SOURCES_LINE = "Додаткові джерела: {sources}."
+CONTACT_LINE = "Помітили неактуальне? Напишіть: {linkedin}"
+RULES_LINE = "Правила станом на {updated_on:%d.%m.%Y} (версія {version}). {disclaimer}"
 
 Values = dict[str, object]
 
@@ -219,6 +222,40 @@ def _esv_note(period: Period, values: Values, rules: Rules) -> str:
     return ESV_ROW_ANNUAL.format(**values, esv_year=esv_year)
 
 
+def sources_text(rules: Rules) -> str | None:
+    """Optional third-party sources as "Name (url), ..."; None when the rules list none."""
+    if not rules.recommended_sources:
+        return None
+    return ", ".join(f"{s.name} ({s.url})" for s in rules.recommended_sources)
+
+
+def sources_lines(rules: Rules) -> list[str]:
+    """Official sources first, then the optional third-party ones (only if any are configured)."""
+    lines = [
+        SOURCES_LINE.format(
+            legislation=rules.links.legislation, tax_service=rules.links.tax_service
+        )
+    ]
+    extra = sources_text(rules)
+    if extra is not None:
+        lines.append(EXTRA_SOURCES_LINE.format(sources=extra))
+    return lines
+
+
+def _footer_lines(rules: Rules) -> list[str]:
+    lines: list[str] = []
+    if rules.links.declaration_video:
+        lines.append(VIDEO_LINE.format(video=rules.links.declaration_video))
+    lines.extend(sources_lines(rules))
+    lines.append(CONTACT_LINE.format(linkedin=rules.contact.linkedin))
+    lines.append(
+        RULES_LINE.format(
+            updated_on=rules.updated_on, version=rules.version, disclaimer=rules.disclaimer
+        )
+    )
+    return lines
+
+
 def fill_instructions(rows: DeclarationRows, plan: PaymentPlan, rules: Rules) -> str:
     values = _values(rows, rules)
     has_previous = previous_period(rows.period) is not None
@@ -248,17 +285,6 @@ def fill_instructions(rows: DeclarationRows, plan: PaymentPlan, rules: Rules) ->
                 label=TAX_LABELS[item.tax], what=what, due=item.due, code=item.budget_code
             )
         )
-    channels = ", ".join(f"{c.name} ({c.url})" for c in rules.channels)
     lines.append("")
-    lines.extend(
-        line.format(
-            video=rules.links.declaration_video,
-            channels=channels,
-            linkedin=rules.contact.linkedin,
-            updated_on=rules.updated_on,
-            version=rules.version,
-            disclaimer=rules.disclaimer,
-        )
-        for line in FOOTER
-    )
+    lines.extend(_footer_lines(rules))
     return "\n".join(lines)

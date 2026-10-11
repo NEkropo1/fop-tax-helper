@@ -68,10 +68,14 @@ class Links(_Frozen):
     tax_account: str
     new_declaration: str
     requisites_xlsx: str
-    declaration_video: str
+    legislation: str  # the Tax Code: the binding source for every figure
+    tax_service: str  # the tax service site (official explanations, forms)
+    declaration_video: str | None = None  # optional third-party walkthrough; omitted by default
 
 
-class Channel(_Frozen):
+class RecommendedSource(_Frozen):
+    """Optional third-party material (channel, blog). Listed only with its owner's consent."""
+
     name: str
     url: str
 
@@ -105,7 +109,7 @@ class Rules(_Frozen):
     declaration: Declaration
     budget_codes: dict[Tax, str]
     links: Links
-    channels: tuple[Channel, ...]
+    recommended_sources: tuple[RecommendedSource, ...] = ()
     contact: Contact
     internal_transfer: InternalTransferRule
     disclaimer: str
