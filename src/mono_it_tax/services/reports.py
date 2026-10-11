@@ -102,9 +102,8 @@ class ReportService:
     def save_typed_previous(self, year: int, previous: PreviousDeclaration, rules: Rules) -> None:
         """Validate the rows typed from the cabinet, then store them (MANUAL, timestamped)."""
         validate_previous_rows(previous, rules)
-        doc = self._store.load(year)
-        doc.declarations.append(_as_input(previous, MarkSource.MANUAL, self._clock.now()))
-        self._store.save(doc)
+        with self._store.edit(year) as doc:
+            doc.declarations.append(_as_input(previous, MarkSource.MANUAL, self._clock.now()))
 
     def declaration(
         self,

@@ -105,21 +105,20 @@ class FetchService:
     def _fetch_one(self, year: int, task: FetchTask) -> None:
         currency = self._account_currency(year, task.account_id)
         result = self._client.statement(task.account_id, currency, task.start, task.end)
-        doc = self._store.load(year)
-        for payment in result.incoming:
-            doc.payments[payment.id] = payment
-        doc.ledger.append(
-            FetchRecord(
-                account_id=task.account_id,
-                requested_from=task.start,
-                requested_to=task.end,
-                fetched_at=self._clock.now(),
-                items_received=result.items_received,
-                items_kept=len(result.incoming),
-                scope=Scope.INCOMING_ONLY,
+        with self._store.edit(year) as doc:  # payments + ledger record in ONE atomic write
+            for payment in result.incoming:
+                doc.payments[payment.id] = payment
+            doc.ledger.append(
+                FetchRecord(
+                    account_id=task.account_id,
+                    requested_from=task.start,
+                    requested_to=task.end,
+                    fetched_at=self._clock.now(),
+                    items_received=result.items_received,
+                    items_kept=len(result.incoming),
+                    scope=Scope.INCOMING_ONLY,
+                )
             )
-        )
-        self._store.save(doc)
         log.info(
             "fetched %s: %d items, %d incoming kept",
             task.month,

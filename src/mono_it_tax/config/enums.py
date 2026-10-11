@@ -80,6 +80,7 @@ class ErrorCode(StrEnum):
     RATE_MISSING = "rate_missing"
     UNSUPPORTED_CURRENCY = "unsupported_currency"
     STORE_UNREADABLE = "store_unreadable"
+    STORE_WRITE_FAILED = "store_write_failed"
     CONFIG_TOKEN_MISSING = "config_token_missing"  # noqa: S105  (error code name)
     CONFIG_RULES_MISSING = "config_rules_missing"
     CONFIG_RULES_INVALID = "config_rules_invalid"

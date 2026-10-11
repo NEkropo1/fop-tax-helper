@@ -30,6 +30,7 @@ STATUS_BY_CODE: dict[ErrorCode, int] = {
     ErrorCode.API_CHANGED: 502,
     ErrorCode.RATE_LIMITED: 429,
     ErrorCode.STORE_UNREADABLE: 409,
+    ErrorCode.STORE_WRITE_FAILED: 503,
     ErrorCode.CONFIG_TOKEN_MISSING: 503,
     ErrorCode.CONFIG_RULES_MISSING: 503,
     ErrorCode.CONFIG_RULES_INVALID: 503,

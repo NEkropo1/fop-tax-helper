@@ -1,6 +1,7 @@
 """NBU rates for the dates of marked foreign-currency income. Past rates never change: cached."""
 
 from datetime import date
+from decimal import Decimal
 
 from mono_it_tax.clients.nbu import NbuClient
 from mono_it_tax.config.enums import Currency
@@ -20,12 +21,12 @@ class RatesService:
             payment = doc.payments[payment_id]
             if payment.currency is not Currency.UAH:
                 needed.setdefault(payment.currency, set()).add(payment.tax_date)
-        changed = False
+        fetched: dict[Currency, dict[date, Decimal]] = {}
         for currency, days in needed.items():
-            known = doc.rates.setdefault(currency, {})
-            missing = days - set(known)
-            if missing:
-                known.update(self._nbu.rates(currency, min(missing), max(missing)))
-                changed = True
-        if changed:
-            self._store.save(doc)
+            missing = days - set(doc.rates.get(currency, {}))
+            if missing:  # the network call stays outside the store lock
+                fetched[currency] = self._nbu.rates(currency, min(missing), max(missing))
+        if fetched:
+            with self._store.edit(year) as current:  # merge: another request may have saved too
+                for currency, rates in fetched.items():
+                    current.rates.setdefault(currency, {}).update(rates)

@@ -1,5 +1,6 @@
 import json
 import sys
+import threading
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -11,7 +12,7 @@ from mono_it_tax.config.constants.store import STORE_SCHEMA_VERSION
 from mono_it_tax.config.enums import Currency, KeyStorage, MarkSource, Period
 from mono_it_tax.domain.account import Account
 from mono_it_tax.domain.income import Mark
-from mono_it_tax.errors import ConfigKeyUnavailableError, StoreUnreadableError
+from mono_it_tax.errors import ConfigKeyUnavailableError, StoreUnreadableError, StoreWriteError
 from mono_it_tax.store.document import DeclarationInput, YearDocument
 from mono_it_tax.store.keys import (
     FileKeyProvider,
@@ -188,10 +189,53 @@ def test_failed_write_leaves_the_old_document_intact(
         raise OSError("disk full")
 
     monkeypatch.setattr(Path, "replace", explode)
-    with pytest.raises(OSError, match="disk full"):
+    with pytest.raises(StoreWriteError) as raised:  # typed, never a bare OSError
         store.save(YearDocument(year=2026))
+    assert isinstance(raised.value.__cause__, OSError)
     monkeypatch.undo()
     assert store.load(2026) == original
+
+
+def test_concurrent_edits_neither_collide_nor_lose_updates(tmp_path: Path) -> None:
+    """Regression: the UI fires several requests at once; they all wrote the same temp file, so
+    Windows refused one replace (WinError 32), and read-modify-write cycles overwrote each other."""
+    store = YearStore(tmp_path, FixedKey())
+    store.save(YearDocument(year=2026))
+    workers, per_worker = 8, 15
+    failures: list[BaseException] = []
+
+    def work(worker: int) -> None:
+        try:
+            for n in range(per_worker):
+                payment_id = f"w{worker}-{n}"
+                with store.edit(2026) as doc:
+                    doc.marks[payment_id] = Mark(payment_id=payment_id)
+                store.load(2026)  # readers meet the writers' replace too
+        except BaseException as exc:  # noqa: BLE001  (collected, asserted below)
+            failures.append(exc)
+
+    threads = [threading.Thread(target=work, args=(w,)) for w in range(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert failures == []
+    assert len(store.load(2026).marks) == workers * per_worker
+
+
+def test_an_edit_that_raises_saves_nothing(tmp_path: Path) -> None:
+    store = YearStore(tmp_path, FixedKey())
+    store.save(YearDocument(year=2026))
+
+    def half_done() -> None:
+        with store.edit(2026) as doc:
+            doc.marks["p1"] = Mark(payment_id="p1")
+            raise KeyError("p1")
+
+    with pytest.raises(KeyError):
+        half_done()
+    assert store.load(2026).marks == {}
 
 
 def test_years_and_explicit_deletion(tmp_path: Path) -> None:

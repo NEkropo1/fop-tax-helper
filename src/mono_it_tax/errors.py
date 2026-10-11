@@ -60,6 +60,11 @@ class StoreUnreadableError(AppError):
     PARAMS = ("path",)
 
 
+class StoreWriteError(AppError):
+    code = ErrorCode.STORE_WRITE_FAILED
+    PARAMS = ("path",)
+
+
 class ConfigTokenMissingError(AppError):
     code = ErrorCode.CONFIG_TOKEN_MISSING
 
