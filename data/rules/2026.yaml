@@ -11,6 +11,7 @@ single_tax:                         # 5% without VAT -> rows 06/11. A VAT payer 
   income_row: "06"
   tax_row: "11"
   note: "для неплатників ПДВ — найпоширеніший випадок; платникам ПДВ на 3% відповідає рядок 05"
+estimate_rates: ["0.03", "0.05", "0.15"]   # single-tax rates shown side by side in the estimate; edit freely
 military_levy_rate: "0.01"          # 1% of income
 income_limit_uah: "10091049"
 sources:

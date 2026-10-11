@@ -95,6 +95,9 @@ class Rules(_Frozen):
     minimum_wage_uah: Decimal
     esv_rate: Decimal
     single_tax: Regime
+    estimate_rates: tuple[
+        Decimal, ...
+    ]  # single-tax rates the indicative estimate shows side by side
     military_levy_rate: Decimal
     income_limit_uah: Decimal
     sources: tuple[str, ...]
@@ -106,6 +109,13 @@ class Rules(_Frozen):
     contact: Contact
     internal_transfer: InternalTransferRule
     disclaimer: str
+
+    @field_validator("estimate_rates")
+    @classmethod
+    def _rates_are_fractions(cls, v: tuple[Decimal, ...]) -> tuple[Decimal, ...]:
+        if not v or any(not Decimal(0) < rate <= Decimal(1) for rate in v):
+            raise ValueError("estimate_rates must be a non-empty list of fractions in (0, 1]")
+        return v
 
     @field_validator("budget_codes")
     @classmethod

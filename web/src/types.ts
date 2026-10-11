@@ -84,12 +84,17 @@ export interface Payments {
   months: MonthState[];
 }
 
+export interface RateEstimate {
+  rate: string; // fraction, e.g. "0.05"
+  single_tax: string;
+  total: string;
+}
+
 export interface Estimate {
   income: string;
-  single_tax: string;
   military_levy: string;
   esv: string;
-  total: string;
+  by_rate: RateEstimate[];
   months: number;
   text: string;
 }

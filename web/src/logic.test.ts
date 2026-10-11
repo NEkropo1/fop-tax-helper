@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDate, formatDuration, formatMoney } from "./format";
+import { formatDate, formatDuration, formatMoney, formatPercent } from "./format";
 import { bulkIds, monthKey, rangeIds } from "./selection";
 import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
+
+describe("formatPercent", () => {
+  it("shows the rules-file fractions as plain percents", () => {
+    expect(formatPercent("0.03")).toBe("3%");
+    expect(formatPercent("0.05")).toBe("5%");
+    expect(formatPercent("0.15")).toBe("15%");
+    expect(formatPercent("0.075")).toBe("7.5%");
+  });
+});
 
 describe("bulkIds", () => {
   const payments = [

@@ -167,12 +167,17 @@ class PaymentsOut(BaseModel):
     months: list[MonthStateOut]
 
 
+class RateEstimateOut(BaseModel):
+    rate: str  # fraction, e.g. "0.05"
+    single_tax: str
+    total: str
+
+
 class EstimateOut(BaseModel):
     income: str
-    single_tax: str
     military_levy: str
     esv: str
-    total: str
+    by_rate: list[RateEstimateOut]
     months: int
     text: str
 

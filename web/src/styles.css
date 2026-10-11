@@ -415,6 +415,13 @@ h3 {
   overflow: hidden;
 }
 
+.rate-label {
+  margin: 12px 0 6px;
+  color: var(--heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .estimate-row {
   display: flex;
   justify-content: space-between;

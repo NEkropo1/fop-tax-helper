@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 
 from mono_it_tax.config.enums import Currency, Period, Tax
 from mono_it_tax.domain.declaration import build_declaration
@@ -75,16 +76,29 @@ def test_uah_needs_no_rate() -> None:
     assert to_uah(D("12.5"), Currency.UAH, date(2026, 1, 1), {}) == D("12.5")
 
 
-def test_months_estimate() -> None:
+def test_months_estimate_lists_every_configured_rate() -> None:
     est = estimate(D("100000"), 3, RULES)
-    assert (est.single_tax, est.military_levy, est.esv) == (
-        D("5000.00"),
-        D("1000.00"),
-        D("5707.02"),
-    )
-    assert est.total == D("11707.02")
+    assert (est.military_levy, est.esv) == (D("1000.00"), D("5707.02"))
+    assert [(r.rate, r.single_tax, r.total) for r in est.by_rate] == [
+        (D("0.03"), D("3000.00"), D("9707.02")),
+        (D("0.05"), D("5000.00"), D("11707.02")),
+        (D("0.15"), D("15000.00"), D("21707.02")),
+    ]
+    assert [r.rate for r in est.by_rate] == list(RULES.estimate_rates)  # config order, not sorted
+
+
+def test_estimate_rates_follow_the_rules_file() -> None:
+    est = estimate(D("1000"), 1, make_rules(estimate_rates=(D("0.2"),)))
+    assert [r.single_tax for r in est.by_rate] == [D("200.00")]
+
+
+@pytest.mark.parametrize("bad", [(), (D("0"),), (D("1.5"),), (D("0.05"), D("-0.1"))])
+def test_estimate_rates_must_be_a_list_of_fractions(bad: tuple[Decimal, ...]) -> None:
+    with pytest.raises(ValidationError):
+        make_rules(estimate_rates=bad)
 
 
 def test_zero_income_estimate_is_only_esv() -> None:
     est = estimate(D(0), 1, RULES)
-    assert est.total == est.esv == D("1902.34")
+    assert [r.total for r in est.by_rate] == [est.esv] * len(RULES.estimate_rates)
+    assert est.esv == D("1902.34")

@@ -24,6 +24,7 @@ from mono_it_tax.api.schemas import (
     PlannedPaymentOut,
     PlanOut,
     PlanTaskOut,
+    RateEstimateOut,
     ReviewIn,
     RulesOut,
     ScopeIn,
@@ -152,10 +153,12 @@ def _estimate_out(
     estimate = pipeline.months_estimate(months, ids, rules)
     return EstimateOut(
         income=str(estimate.income_uah),
-        single_tax=str(estimate.single_tax),
         military_levy=str(estimate.military_levy),
         esv=str(estimate.esv),
-        total=str(estimate.total),
+        by_rate=[
+            RateEstimateOut(rate=str(r.rate), single_tax=str(r.single_tax), total=str(r.total))
+            for r in estimate.by_rate
+        ],
         months=estimate.months,
         text=pipeline.months_report(months, ids, rules),
     )

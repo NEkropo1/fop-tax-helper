@@ -7,6 +7,11 @@ export function formatMoney(value: string): string {
   return `${negative ? "-" : ""}${grouped}.${(fraction + "00").slice(0, 2)}`;
 }
 
+/** "0.05" -> "5%" (a fraction from the rules file; trailing zeros dropped, no float noise). */
+export function formatPercent(fraction: string): string {
+  return `${parseFloat((Number(fraction) * 100).toFixed(2))}%`;
+}
+
 /** Seconds -> "≈ 3 хв" (rounded up; never "0 хв" for a non-zero wait). */
 export function formatDuration(seconds: number): string {
   if (seconds <= 0) return "0 хв";

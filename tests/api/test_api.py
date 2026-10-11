@@ -185,7 +185,11 @@ def test_full_flow_fetch_mark_review_report(tmp_path: Path) -> None:
 
     info = post(client, "/api/report/info", body).json()
     assert info["income"] == "2000.00"
-    assert info["single_tax"] == "100.00"
+    assert [(r["rate"], r["single_tax"]) for r in info["by_rate"]] == [
+        ("0.03", "60.00"),
+        ("0.05", "100.00"),
+        ("0.15", "300.00"),
+    ]
     assert "2 000.00" in info["text"]
 
     declaration = {

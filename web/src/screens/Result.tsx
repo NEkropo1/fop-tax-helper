@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { ApiError, api } from "../api";
 import { copy } from "../copy";
-import { formatDate, formatMoney } from "../format";
+import { formatDate, formatMoney, formatPercent } from "../format";
 import { scopeOf, type Flow } from "../flow";
 import type { Declaration, Estimate, PreviousRows, Rules } from "../types";
 import { DeclarationText, SourcesSection } from "../DeclarationText";
@@ -23,25 +23,38 @@ interface Props {
 }
 
 function EstimateView({ estimate }: { estimate: Estimate }) {
-  const rows: [string, string][] = [
+  const common: [string, string][] = [
     [copy.result.income, estimate.income],
-    [copy.result.singleTax, estimate.single_tax],
     [copy.result.levy, estimate.military_levy],
     [copy.result.esv, estimate.esv],
-    [copy.result.total, estimate.total],
   ];
   return (
     <>
       <h3 className="section-label">{copy.result.estimateLabel}</h3>
       <p className="doc-lead">{copy.result.info}</p>
       <dl className="estimate">
-        {rows.map(([label, value]) => (
-          <div key={label} className={label === copy.result.total ? "estimate-row total" : "estimate-row"}>
+        {common.map(([label, value]) => (
+          <div key={label} className="estimate-row">
             <dt>{label}</dt>
             <dd className="amount">{formatMoney(value)} грн</dd>
           </div>
         ))}
       </dl>
+      {estimate.by_rate.map((item) => (
+        <div key={item.rate}>
+          <h4 className="rate-label">{copy.result.byRate(formatPercent(item.rate))}</h4>
+          <dl className="estimate">
+            <div className="estimate-row">
+              <dt>{copy.result.singleTax}</dt>
+              <dd className="amount">{formatMoney(item.single_tax)} грн</dd>
+            </div>
+            <div className="estimate-row total">
+              <dt>{copy.result.total}</dt>
+              <dd className="amount">{formatMoney(item.total)} грн</dd>
+            </div>
+          </dl>
+        </div>
+      ))}
       <p className="notice caution">{copy.result.verify}</p>
     </>
   );

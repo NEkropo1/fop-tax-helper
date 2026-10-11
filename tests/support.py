@@ -62,6 +62,7 @@ def make_rules(**overrides: Any) -> Rules:
         "single_tax": Regime(
             rate=Decimal("0.05"), income_row="06", tax_row="11", note="no-VAT case"
         ),
+        "estimate_rates": (Decimal("0.03"), Decimal("0.05"), Decimal("0.15")),
         "military_levy_rate": Decimal("0.01"),
         "income_limit_uah": Decimal("10091049"),
         "sources": ("https://example.test/source",),
