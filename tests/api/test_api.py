@@ -222,7 +222,7 @@ def test_full_flow_fetch_mark_review_report(tmp_path: Path) -> None:
     assert "102 000.00" in result["text"]
     assert result["declaration_due"] == "2026-11-09"
     esv = next(p for p in result["payments"] if p["tax"] == "esv")
-    assert (esv["amount"], esv["due"]) == ("5707.02", "2026-10-19")
+    assert (esv["amount"], esv["due"]) == ("5707.02", "2026-10-20")
 
     again = post(client, "/api/report/declaration", {**declaration, "previous": None}).json()
     assert again["rows"] == result["rows"]  # the typed rows were stored; no need to type twice

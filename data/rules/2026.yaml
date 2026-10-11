@@ -18,12 +18,13 @@ sources:
   - https://monobank.ua/en/knowledge-base/fop/fop-3-grupa-2026
   - https://buhgalter911.com/uk/news/news-1091019.html
   - https://buhplatforma.com.ua/news/128232-fop-3-grupa-kalendar-zvitnosti-ta-splaty-podatkiv-za-iii-kvartal-2026-roku-shpargalka
+  - https://i.factor.ua/ukr/news/koli-fop-mayut-splatiti-yesv-za-i-kvartal-2026-roku/   # ЄСВ: by the 20th after the quarter
 # Deadlines relative to the end of the reporting quarter. A deadline on a weekend moves to Monday
 # (public holidays are NOT modelled: check the date in the e-cabinet calendar).
 deadlines:
   declaration_days_after_quarter_end: 40   # Q3 2026 -> 9 Nov
   single_tax_days_after_quarter_end: 50    # Q3 2026 -> 19 Nov (ЄП and ВЗ)
-  esv_day_of_next_month: 19                # Q3 2026 -> 19 Oct (decided per official docs)
+  esv_day_of_next_month: 20                # Q3 2026 -> 20 Oct (the 20th after the quarter)
 declaration:
   form: F0103309
   order: "Мінфін 19.06.2015 №578 (ред. 31.01.2025 №57)"

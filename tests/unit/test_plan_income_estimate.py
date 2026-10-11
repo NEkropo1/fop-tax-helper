@@ -36,7 +36,7 @@ def test_third_quarter_2026_matches_the_accountants_note() -> None:
     plan = build_plan(rows, RULES)
     by_tax = {p.tax: p for p in plan.payments}
     assert by_tax[Tax.ESV].amount == D("5707.02")
-    assert by_tax[Tax.ESV].due == date(2026, 10, 19)
+    assert by_tax[Tax.ESV].due == date(2026, 10, 20)
     assert plan.declaration_due == date(2026, 11, 9)
     assert by_tax[Tax.SINGLE_TAX].due == by_tax[Tax.MILITARY_LEVY].due == date(2026, 11, 19)
     assert by_tax[Tax.SINGLE_TAX].budget_code == RULES.budget_codes[Tax.SINGLE_TAX]
@@ -52,7 +52,7 @@ def test_annual_esv_falls_in_january_of_next_year() -> None:
     rows = build_declaration(Period.Q1, 2026, D(0), None, RULES)
     year_rows = type(rows)(**{**rows.__dict__, "period": Period.Y})
     esv = next(p for p in build_plan(year_rows, RULES).payments if p.tax is Tax.ESV)
-    assert esv.due == date(2027, 1, 19)
+    assert esv.due == date(2027, 1, 20)
 
 
 def test_counted_amount_uses_override_else_bank_amount() -> None:

@@ -114,7 +114,7 @@ def test_quarter_without_new_income_owes_only_esv(tmp_path: Path) -> None:
     assert (help_.rows.row_14, help_.rows.row_25) == (D(0), D(0))
     assert help_.rows.income == D("200000.00")
     assert "платити нічого" in help_.text
-    assert "19.10.2026" in help_.text
+    assert "20.10.2026" in help_.text
     assert "09.11.2026" in help_.text
 
 

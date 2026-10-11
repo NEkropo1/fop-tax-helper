@@ -69,7 +69,7 @@ def make_rules(**overrides: Any) -> Rules:
         "deadlines": Deadlines(
             declaration_days_after_quarter_end=40,
             single_tax_days_after_quarter_end=50,
-            esv_day_of_next_month=19,
+            esv_day_of_next_month=20,
         ),
         "declaration": Declaration(
             form="F0103309",
