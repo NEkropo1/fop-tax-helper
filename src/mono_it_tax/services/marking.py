@@ -63,6 +63,18 @@ class MarkingService:
         doc.marks[payment_id] = Mark(payment_id=payment_id, amount_override=amount)
         self._store.save(doc)
 
+    def unreview_month(self, year: int, account_id: str, month: Month) -> None:
+        """Reopen a confirmed account-month for changes (no-op when it was not confirmed)."""
+        doc = self._store.load(year)
+        kept = [
+            r
+            for r in doc.reviews
+            if (r.account_id, r.year, r.month) != (account_id, month.year, month.month)
+        ]
+        if len(kept) != len(doc.reviews):
+            doc.reviews = kept
+            self._store.save(doc)
+
     def review_month(self, year: int, account_id: str, month: Month) -> None:
         """'Income marked, done' for one account-month; only for a fully fetched month."""
         doc = self._store.load(year)

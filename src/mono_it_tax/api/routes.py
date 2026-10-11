@@ -361,6 +361,20 @@ def review(body: ReviewIn, state: ApiState = Depends(authorized)) -> list[MonthS
     return _month_states(built, body.year, ids, months, {a.id: handles.of(a.id) for a in accounts_})
 
 
+@router.post("/review/cancel", response_model=list[MonthStateOut])
+def cancel_review(body: ReviewIn, state: ApiState = Depends(authorized)) -> list[MonthStateOut]:
+    """Reopen confirmed months so their marks can be changed again."""
+    built = state.ready_app()
+    accounts_ = built.accounts.accounts(body.year)
+    handles = state.ready_handles()
+    ids = [handles.resolve(h, accounts_) for h in body.handles]
+    months = [parse_month(m) for m in body.months]
+    for account_id in ids:
+        for month in months:
+            built.marking.unreview_month(body.year, account_id, month)
+    return _month_states(built, body.year, ids, months, {a.id: handles.of(a.id) for a in accounts_})
+
+
 @router.post("/report/info", response_model=EstimateOut)
 def report_info(scope: ScopeIn, state: ApiState = Depends(authorized)) -> EstimateOut:
     built, selection, ids, _ = _scope(state, scope)

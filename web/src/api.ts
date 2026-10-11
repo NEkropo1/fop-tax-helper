@@ -89,6 +89,8 @@ export const api = {
       payment_id: paymentId,
       amount,
     }),
+  cancelReview: (year: number, handles: string[], months: string[]) =>
+    call<MonthState[]>("POST", "/api/review/cancel", { year, handles, months }),
   review: (year: number, handles: string[], months: string[]) =>
     call<MonthState[]>("POST", "/api/review", { year, handles, months }),
   info: (scope: Scope) => call<Estimate>("POST", "/api/report/info", scope),

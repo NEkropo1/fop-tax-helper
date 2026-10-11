@@ -222,6 +222,10 @@ def test_month_review_lifecycle(tmp_path: Path) -> None:
     assert state_of(app.store.load(2026), UAH_ACC, july) is MonthState.FETCHED
     app.marking.review_month(2026, UAH_ACC, july)
     assert state_of(app.store.load(2026), UAH_ACC, july) is MonthState.REVIEWED
+    app.marking.unreview_month(2026, UAH_ACC, july)  # reopened: marks may change again
+    assert state_of(app.store.load(2026), UAH_ACC, july) is MonthState.FETCHED
+    app.marking.unreview_month(2026, UAH_ACC, july)  # reopening an open month changes nothing
+    assert state_of(app.store.load(2026), UAH_ACC, july) is MonthState.FETCHED
 
 
 def test_months_mode_converts_foreign_income_once_and_caches_rates(tmp_path: Path) -> None:

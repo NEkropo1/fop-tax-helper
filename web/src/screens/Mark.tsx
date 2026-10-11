@@ -16,10 +16,12 @@ interface Props {
 
 function PaymentRow({
   payment,
+  locked,
   onClick,
   onAmount,
 }: {
   payment: Payment;
+  locked: boolean;
   onClick: (id: string, shift: boolean) => void;
   onAmount: (id: string, amount: string | null) => void;
 }) {
@@ -51,6 +53,7 @@ function PaymentRow({
       <input
         type="checkbox"
         checked={payment.marked}
+        disabled={locked}
         aria-label={`Позначити платіж ${payment.time}`}
         onChange={() => undefined}
         onClick={(e) => onClick(payment.id, e.shiftKey)}
@@ -85,6 +88,7 @@ function PaymentRow({
               inputMode="decimal"
               size={12}
               value={draft}
+              disabled={locked}
               placeholder={formatMoney(payment.amount)}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={() => onAmount(payment.id, draft.trim() === "" ? null : draft.trim())}
@@ -163,6 +167,12 @@ export function Mark({ flow, onNext, onBack }: Props) {
       .then(reload)
       .catch(setError);
 
+  const reopen = (months: string[]) =>
+    api
+      .cancelReview(flow.year, flow.handles, months)
+      .then(reload)
+      .catch(setError);
+
   const months = useMemo(() => {
     const byMonth = new Map<string, MonthState[]>();
     for (const state of data?.months ?? []) {
@@ -195,15 +205,19 @@ export function Mark({ flow, onNext, onBack }: Props) {
             </div>
             {listed.length === 0 ? <p className="muted">{copy.mark.emptyMonth}</p> : null}
             {listed.map((p) => (
-              <PaymentRow key={p.id} payment={p} onClick={click} onAmount={setAmount} />
+              <PaymentRow key={p.id} payment={p} locked={done} onClick={click} onAmount={setAmount} />
             ))}
-            {done ? null : (
-              <div className="actions month-foot">
+            <div className="actions month-foot">
+              {done ? (
+                <button type="button" onClick={() => void reopen([month])}>
+                  {copy.mark.reopenMonth(month)}
+                </button>
+              ) : (
                 <button type="button" onClick={() => void review([month])}>
                   {copy.mark.confirmMonth(month)}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </section>
         );
       })}
@@ -215,6 +229,11 @@ export function Mark({ flow, onNext, onBack }: Props) {
         {!allReviewed && pending.length > 0 ? (
           <button type="button" onClick={() => void review(pending)}>
             {copy.mark.confirmAll}
+          </button>
+        ) : null}
+        {allReviewed ? (
+          <button type="button" onClick={() => void reopen(months.map(([m]) => m))}>
+            {copy.mark.reopenAll}
           </button>
         ) : null}
         <button type="button" className="primary" disabled={!allReviewed} onClick={onNext}>

@@ -86,6 +86,9 @@ export const copy = {
     marked: (n: number, total: number) => `позначено ${n} з ${total}`,
     confirmMonth: (month: string) => `Готово за ${month}`,
     confirmAll: "Підтвердити всі місяці",
+    reopenMonth: (month: string) => `Змінити ${month}`,
+    reopenAll: "Змінити позначки (скасувати підтвердження)",
+    locked: "Підтверджено: щоб змінити позначки, натисніть «Змінити».",
     reviewed: "підтверджено",
     needReview:
       "Підтвердіть кожен місяць кнопкою «Готово» (навіть якщо доходів не було), інакше розрахунок неможливий.",

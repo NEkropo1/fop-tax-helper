@@ -176,6 +176,13 @@ def test_full_flow_fetch_mark_review_report(tmp_path: Path) -> None:
     assert {s["state"] for s in states} == {"reviewed"}
     assert [s["marked"] for s in states] == [0, 1, 0]
 
+    reopened = post(client, "/api/review/cancel", {**review_body, "months": ["2026-08"]}).json()
+    assert [s["state"] for s in reopened] == ["fetched"]
+    assert (
+        post(client, "/api/report/info", body).status_code == 409
+    )  # August needs confirming again
+    post(client, "/api/review", review_body)
+
     info = post(client, "/api/report/info", body).json()
     assert info["income"] == "2000.00"
     assert info["single_tax"] == "100.00"
