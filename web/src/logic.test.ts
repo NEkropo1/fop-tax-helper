@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { formatDate, formatDuration, formatMoney, formatPercent } from "./format";
 import { bulkIds, monthKey, rangeIds } from "./selection";
+import type { Account } from "./types";
+import { cardsChanged, selectionExists } from "./accounts";
 import { rulesFallbackYear } from "./flow";
 import { decodeSaved, encodeSaved, safeStep, STATE_VERSION } from "./persist";
 import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
@@ -145,6 +147,31 @@ describe("saved wizard state", () => {
   it("accepts a months selection of the same year", () => {
     const selection = { year: 2026, kind: "months", months: ["2026-02", "2026-03"] };
     expect(decodeSaved(raw({ flow: { ...flow, selection } }))?.flow.selection).toEqual(selection);
+  });
+});
+
+describe("cards selection", () => {
+  const card = (handle: string, over: Partial<Account> = {}): Account => ({
+    handle,
+    type: "black",
+    currency: "UAH",
+    masked_pans: ["5375********1111"],
+    selectable: true,
+    ...over,
+  });
+  it("sees no change when the same cards come back in another order", () => {
+    expect(cardsChanged([card("a"), card("b")], [card("b"), card("a")])).toBe(false);
+  });
+  it("sees a new, removed or altered card", () => {
+    expect(cardsChanged([card("a")], [card("a"), card("b")])).toBe(true);
+    expect(cardsChanged([card("a"), card("b")], [card("a")])).toBe(true);
+    expect(cardsChanged([card("a")], [card("a", { masked_pans: [] })])).toBe(true);
+    expect(cardsChanged([card("a")], [card("a", { type: "white" })])).toBe(true);
+  });
+  it("keeps a selection only while all its accounts exist", () => {
+    expect(selectionExists(["a"], [card("a"), card("b")])).toBe(true);
+    expect(selectionExists([], [card("a")])).toBe(true);
+    expect(selectionExists(["a", "z"], [card("a")])).toBe(false);
   });
 });
 

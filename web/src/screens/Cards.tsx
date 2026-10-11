@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { cardsChanged, selectionExists } from "../accounts";
 import { api } from "../api";
 import { copy } from "../copy";
 import { rulesFallbackYear, type Flow } from "../flow";
@@ -19,12 +20,25 @@ export function Cards({ flow, years, onYear, onHandles, onNext }: Props) {
   const fallbackYear = rulesFallbackYear(years, flow.year);
   const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [error, setError] = useState<unknown>(null);
+  const [resetNote, setResetNote] = useState(false);
   const [yearDraft, setYearDraft] = useState(String(flow.year));
 
   const load = (refresh: boolean) => {
-    setAccounts(null);
     setError(null);
-    api.accounts(flow.year, refresh).then(setAccounts).catch(setError);
+    api
+      .accounts(flow.year, refresh)
+      .then((next) => {
+        // The selection is dropped only when the bank's cards really changed (or vanished).
+        const changed = refresh && accounts !== null && cardsChanged(accounts, next);
+        if (changed || !selectionExists(flow.handles, next)) {
+          if (flow.handles.length > 0) setResetNote(true);
+          onHandles([]);
+        } else if (refresh) {
+          setResetNote(false);
+        }
+        setAccounts(next);
+      })
+      .catch(setError);
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => load(false), [flow.year]);
@@ -64,6 +78,7 @@ export function Cards({ flow, years, onYear, onHandles, onNext }: Props) {
       </label>
       {fallbackYear === null ? null : <RulesFallbackNotice year={flow.year} usedYear={fallbackYear} />}
       <ErrorBox error={error} />
+      {resetNote ? <div className="notice warn">{copy.cards.selectionReset}</div> : null}
       {accounts === null && error === null ? <p>{copy.loading}</p> : null}
       {accounts?.map((a) => (
         <label

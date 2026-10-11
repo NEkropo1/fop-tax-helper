@@ -25,6 +25,28 @@ def test_accounts_are_fetched_once_cached_and_chosen_per_year(tmp_path: Path) ->
     assert app.store.load(2026).tax_accounts == ("acc-2", "acc-1")
 
 
+def test_the_account_list_does_not_depend_on_the_tax_year(tmp_path: Path) -> None:
+    """Regression: switching the year used to cost a bank request and could change the list."""
+    bank = FakeBank()
+    app, _ = make_app(tmp_path, bank)
+    listed = app.accounts.accounts(2026)
+    assert app.accounts.accounts(2025) == listed  # served from the 2026 cache
+    assert app.accounts.accounts(2024) == listed
+    assert bank.client_info_calls == 1
+
+
+def test_a_refresh_updates_every_stored_year_so_they_never_disagree(tmp_path: Path) -> None:
+    bank = FakeBank()
+    app, _ = make_app(tmp_path, bank)
+    app.accounts.accounts(2026)
+    app.accounts.accounts(2025)
+    bank.accounts.append({"id": "acc-3", "currencyCode": 980, "type": "white"})
+    refreshed = app.accounts.accounts(2026, refresh=True)
+    assert [a.id for a in refreshed] == ["acc-1", "acc-2", "acc-3"]
+    assert app.accounts.accounts(2025) == refreshed
+    assert bank.client_info_calls == 2
+
+
 def test_marking_unmarking_and_amount_corrections(tmp_path: Path) -> None:
     bank = FakeBank()
     bank.add("acc-1", bank_item("p1", kyiv_ts(2026, 7, 10), 100_000))

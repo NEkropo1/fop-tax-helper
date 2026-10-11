@@ -131,7 +131,7 @@ export function App() {
       <Cards
         flow={flow}
         years={meta.years}
-        onYear={(year) => patch({ year, handles: [], selection: null })}
+        onYear={(year) => patch({ year, selection: null })} // the cards stay: they do not depend on the year
         onHandles={(handles) => patch({ handles })}
         onNext={() => go("period")}
       />
