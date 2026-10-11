@@ -49,7 +49,8 @@ export interface Payment {
   month: string;
   time: string;
   amount: string;
-  currency: string;
+  currency: string; // the account currency: `amount` is in it
+  operation_currency: string | null; // original operation currency (differs on a conversion)
   description: string | null;
   comment: string | null;
   counter_name: string | null;

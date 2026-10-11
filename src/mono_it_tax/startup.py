@@ -104,6 +104,7 @@ def build_app(settings: Settings, year: int, world: World = World()) -> App:  # 
     )
     nbu = NbuClient(HttpGateway(nbu_http, Service.NBU, clock, policy))
 
+    accounts = AccountService(monobank, store)
     rates = RatesService(nbu, store)
     reports = ReportService(store, clock)
     return App(
@@ -113,8 +114,8 @@ def build_app(settings: Settings, year: int, world: World = World()) -> App:  # 
         clock=clock,
         key_provider=key_provider,
         store=store,
-        accounts=AccountService(monobank, store),
+        accounts=accounts,
         marking=MarkingService(store, clock),
-        fetch_pipeline=FetchPipeline(FetchService(monobank, store, clock), store),
+        fetch_pipeline=FetchPipeline(FetchService(monobank, accounts, store, clock), store),
         report_pipeline=ReportPipeline(reports, rates, clock),
     )

@@ -32,6 +32,7 @@ function PaymentRow({
     ["IBAN контрагента", payment.counter_iban],
     ["MCC", payment.mcc],
     ["Початковий MCC", payment.original_mcc],
+    ["Валюта операції", payment.operation_currency],
     ["Сума операції", payment.operation_amount],
     ["Комісія", payment.commission_rate],
     ["Кешбек", payment.cashback_amount],
@@ -39,6 +40,11 @@ function PaymentRow({
     ["Не остаточна (hold)", payment.hold],
   ] as const;
   const extra = Object.entries(payment.extra);
+  // The bank converted the money: `amount` is already in the account currency, no NBU rate applies.
+  const converted =
+    payment.operation_currency !== null &&
+    payment.operation_currency !== payment.currency &&
+    payment.operation_amount !== null;
 
   return (
     <div className="row">
@@ -57,6 +63,11 @@ function PaymentRow({
             </strong>
           </span>{" "}
           <span className="muted">{payment.time.slice(0, 16).replace("T", " ")}</span>{" "}
+          {converted ? (
+            <span className="badge" title={copy.mark.convertedHint}>
+              {copy.mark.converted(payment.operation_amount ?? "", payment.operation_currency ?? "")}
+            </span>
+          ) : null}{" "}
           {payment.possible_internal_transfer ? (
             <span className="badge warn" title={copy.mark.transferHint}>
               {copy.mark.transfer}

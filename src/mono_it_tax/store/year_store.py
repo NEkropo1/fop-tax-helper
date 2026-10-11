@@ -7,7 +7,6 @@ either the old or the new document, never a torn one. Data is never deleted auto
 import json
 import os
 import shutil
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -23,9 +22,7 @@ from mono_it_tax.config.constants.store import (
 from mono_it_tax.errors import StoreUnreadableError
 from mono_it_tax.store.document import YearDocument
 from mono_it_tax.store.keys import StoreKeyProvider
-
-# schema_version N -> function turning a version-N payload into version N+1 (empty until needed).
-MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {}
+from mono_it_tax.store.migrations import MIGRATIONS
 
 
 class YearStore:

@@ -10,6 +10,7 @@ from mono_it_tax.config.enums import Currency
 from mono_it_tax.config.rules import InternalTransferRule
 from mono_it_tax.domain.currency import currency_from_numeric
 from mono_it_tax.domain.months import kyiv_date
+from mono_it_tax.errors import UnsupportedCurrencyError
 
 # Raw bank keys that Payment decodes into typed fields; anything else is shown as-is, never dropped.
 DECODED_RAW_KEYS = frozenset(
@@ -22,7 +23,9 @@ DECODED_RAW_KEYS = frozenset(
 
 
 class Payment(BaseModel):
-    """Amounts are minor units (kopiykas/cents) of the account currency, as the bank sends them."""
+    """`amount` is in minor units (kopiykas/cents) of the ACCOUNT currency, which `currency` names.
+    `operation_amount` / `operation_currency` describe the original operation (e.g. a USD payment
+    credited to a UAH card as UAH); the bank's own `currencyCode` is the operation currency."""
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
 
@@ -31,6 +34,7 @@ class Payment(BaseModel):
     time: datetime
     amount: int
     currency: Currency
+    operation_currency: Currency | None = None  # None: not supported here (still in `raw`)
     description: str | None = None
     comment: str | None = None
     mcc: int | None = None
@@ -53,12 +57,19 @@ class Payment(BaseModel):
         return datetime.fromtimestamp(v, UTC) if isinstance(v, int) else v
 
     @classmethod
-    def from_item(cls, item: Mapping[str, Any], account_id: str) -> "Payment":
-        """Parse one raw statement item. Raises pydantic.ValidationError if the shape drifted and
-        UnsupportedCurrencyError for an unknown currency code."""
-        currency = currency_from_numeric(int(item["currencyCode"]))
+    def from_item(
+        cls, item: Mapping[str, Any], account_id: str, account_currency: Currency
+    ) -> "Payment":
+        """Parse one raw statement item of an account kept in `account_currency`. Raises
+        pydantic.ValidationError if the shape drifted."""
         return cls.model_validate(
-            {**item, "account_id": account_id, "currency": currency, "raw": dict(item)}
+            {
+                **item,
+                "account_id": account_id,
+                "currency": account_currency,
+                "operation_currency": _operation_currency(item.get("currencyCode")),
+                "raw": dict(item),
+            }
         )
 
     @property
@@ -75,6 +86,15 @@ class Payment(BaseModel):
     @property
     def is_incoming(self) -> bool:
         return self.amount > 0
+
+
+def _operation_currency(code: object) -> Currency | None:
+    if not isinstance(code, int):
+        return None
+    try:
+        return currency_from_numeric(code)
+    except UnsupportedCurrencyError:
+        return None
 
 
 def is_possible_internal_transfer(payment: Payment, rule: InternalTransferRule) -> bool:

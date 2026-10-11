@@ -70,7 +70,7 @@ def test_payment_keeps_every_field_and_the_raw_item() -> None:
     item = bank_item(
         "x1", counterName="ТОВ Ромашка", counterEdrpou="123", invoiceId="inv", future_field="kept"
     )
-    payment = Payment.from_item(item, "acc-9")
+    payment = Payment.from_item(item, "acc-9", Currency.UAH)
     assert payment.counter_name == "ТОВ Ромашка"
     assert payment.invoice_id == "inv"
     assert payment.original_mcc == 4829
@@ -79,16 +79,17 @@ def test_payment_keeps_every_field_and_the_raw_item() -> None:
     assert payment.currency is Currency.UAH
 
 
-def test_unknown_currency_fails_loudly() -> None:
-    with pytest.raises(UnsupportedCurrencyError):
-        Payment.from_item(bank_item(currency_code=1), "a")
+def test_currency_is_the_account_one_and_the_operation_one_is_kept_apart() -> None:
+    payment = Payment.from_item(bank_item(currency_code=840), "a", Currency.UAH)
+    assert payment.currency is Currency.UAH
+    assert payment.operation_currency is Currency.USD
 
 
 def test_shape_drift_is_a_validation_error() -> None:
     item = bank_item()
     del item["id"]
     with pytest.raises(pydantic.ValidationError):
-        Payment.from_item(item, "a")
+        Payment.from_item(item, "a", Currency.UAH)
 
 
 def test_internal_transfer_tag_is_only_a_hint_by_mcc_and_wording() -> None:

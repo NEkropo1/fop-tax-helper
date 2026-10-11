@@ -12,9 +12,12 @@ from datetime import datetime
 from mono_it_tax.clients.monobank import MonobankClient
 from mono_it_tax.clock import Clock
 from mono_it_tax.config.constants.api import MONOBANK_MIN_INTERVAL_S
-from mono_it_tax.config.enums import Scope
+from mono_it_tax.config.enums import Currency, Scope
+from mono_it_tax.domain.currency import currency_from_numeric
 from mono_it_tax.domain.ledger import FetchRecord, missing_ranges
 from mono_it_tax.domain.months import Month
+from mono_it_tax.errors import UnknownAccountError
+from mono_it_tax.services.accounts import AccountService
 from mono_it_tax.store.document import YearDocument
 from mono_it_tax.store.year_store import YearStore
 
@@ -54,8 +57,11 @@ class FetchOutcome:
 
 
 class FetchService:
-    def __init__(self, client: MonobankClient, store: YearStore, clock: Clock) -> None:
+    def __init__(
+        self, client: MonobankClient, accounts: AccountService, store: YearStore, clock: Clock
+    ) -> None:
         self._client = client
+        self._accounts = accounts
         self._store = store
         self._clock = clock
 
@@ -88,8 +94,17 @@ class FetchService:
                 on_progress(FetchProgress(done, len(plan.tasks), task))
         return FetchOutcome(done, len(plan.tasks), cancelled=False)
 
+    def _account_currency(self, year: int, account_id: str) -> Currency:
+        """Statement amounts are in the account currency, so the account must be known (cached
+        accounts cost nothing; otherwise one client-info request)."""
+        for account in self._accounts.accounts(year):
+            if account.id == account_id:
+                return currency_from_numeric(account.currency_code)
+        raise UnknownAccountError
+
     def _fetch_one(self, year: int, task: FetchTask) -> None:
-        result = self._client.statement(task.account_id, task.start, task.end)
+        currency = self._account_currency(year, task.account_id)
+        result = self._client.statement(task.account_id, currency, task.start, task.end)
         doc = self._store.load(year)
         for payment in result.incoming:
             doc.payments[payment.id] = payment

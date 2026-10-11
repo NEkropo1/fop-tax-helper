@@ -13,8 +13,8 @@ from mono_it_tax.config.constants.api import (
     MONOBANK_TOKEN_HEADER,
 )
 from mono_it_tax.config.enums import Currency, Service
-from mono_it_tax.errors import ApiChangedError, UnsupportedCurrencyError
-from tests.support import FakeClock, bank_item, json_response
+from mono_it_tax.errors import ApiChangedError
+from tests.support import USD_CODE, FakeClock, bank_item, json_response
 
 START = datetime(2026, 7, 1, tzinfo=UTC)
 END = datetime(2026, 7, 31, tzinfo=UTC)
@@ -76,27 +76,39 @@ def test_statement_keeps_only_incoming_dedupes_and_orders() -> None:
         bank_item("a", 100, 300),  # the bank repeated an item
     ]
     transport, _ = serving(page)
-    result = mono(transport).statement("acc", START, END)
+    result = mono(transport).statement("acc", Currency.UAH, START, END)
     assert [p.id for p in result.incoming] == ["a", "b"]
     assert result.items_received == 4
 
 
-def test_unsupported_currency_in_an_outgoing_item_is_ignored() -> None:
+def test_unsupported_operation_currency_in_an_outgoing_item_is_ignored() -> None:
     transport, _ = serving([bank_item("o", 1, -5, currency_code=1)])
-    assert mono(transport).statement("acc", START, END).incoming == ()
+    assert mono(transport).statement("acc", Currency.UAH, START, END).incoming == ()
 
 
-def test_unsupported_currency_in_incoming_item_fails_loudly() -> None:
+def test_payment_amount_is_in_the_account_currency_not_the_operation_currency() -> None:
+    """A USD payment credited to a UAH card: `amount` is UAH, the bank's currencyCode says USD."""
+    item = bank_item("conv", 1, 150_000, currency_code=USD_CODE, operationAmount=3_600)
+    transport, _ = serving([item])
+    payment = mono(transport).statement("acc", Currency.UAH, START, END).incoming[0]
+    assert payment.currency is Currency.UAH
+    assert payment.operation_currency is Currency.USD
+    assert payment.operation_amount == 3_600
+
+
+def test_unsupported_operation_currency_is_kept_in_raw_not_fatal() -> None:
     transport, _ = serving([bank_item("i", 1, 5, currency_code=1)])
-    with pytest.raises(UnsupportedCurrencyError):
-        mono(transport).statement("acc", START, END)
+    payment = mono(transport).statement("acc", Currency.UAH, START, END).incoming[0]
+    assert payment.currency is Currency.UAH
+    assert payment.operation_currency is None
+    assert payment.raw["currencyCode"] == 1
 
 
 def test_full_page_is_followed_backwards_in_time() -> None:
     first = [bank_item(f"n{i}", 10_000 - i, 1) for i in range(MONOBANK_PAGE_LIMIT)]
     second = [bank_item(f"m{i}", 5_000 - i, 1) for i in range(3)]
     transport, seen = serving(first, second)
-    result = mono(transport).statement("acc", START, END)
+    result = mono(transport).statement("acc", Currency.UAH, START, END)
     assert len(result.incoming) == MONOBANK_PAGE_LIMIT + 3
     assert result.items_received == MONOBANK_PAGE_LIMIT + 3
     oldest_of_first = 10_000 - (MONOBANK_PAGE_LIMIT - 1)
@@ -107,23 +119,23 @@ def test_a_full_page_inside_one_second_cannot_be_paged() -> None:
     stuck = [bank_item(f"x{i}", int(END.timestamp()), 1) for i in range(MONOBANK_PAGE_LIMIT)]
     transport, _ = serving(stuck)
     with pytest.raises(ApiChangedError):
-        mono(transport).statement("acc", START, END)
+        mono(transport).statement("acc", Currency.UAH, START, END)
 
 
 def test_statement_range_over_the_api_limit_is_a_programming_error() -> None:
     transport, _ = serving()
     too_long = datetime.fromtimestamp(START.timestamp() + MONOBANK_MAX_SPAN_S + 1, UTC)
     with pytest.raises(ValueError, match="exceeds"):
-        mono(transport).statement("acc", START, too_long)
+        mono(transport).statement("acc", Currency.UAH, START, too_long)
 
 
 def test_statement_garbage_is_api_changed() -> None:
     transport, _ = serving({"error": "nope"})
     with pytest.raises(ApiChangedError):
-        mono(transport).statement("acc", START, END)
+        mono(transport).statement("acc", Currency.UAH, START, END)
     transport, _ = serving([{"id": "x", "time": 1}])  # no amount
     with pytest.raises(ApiChangedError):
-        mono(transport).statement("acc", START, END)
+        mono(transport).statement("acc", Currency.UAH, START, END)
 
 
 def nbu(body: object) -> tuple[NbuClient, list[httpx.Request]]:

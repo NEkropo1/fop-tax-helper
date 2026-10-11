@@ -1,7 +1,7 @@
 """Local store layout and key-storage names."""
 
 APP_NAME = "mono-it-tax"
-STORE_SCHEMA_VERSION = 1
+STORE_SCHEMA_VERSION = 2
 STORE_DIR_NAME = "store"
 STORE_FILE_SUFFIX = ".enc"
 STORE_BACKUP_SUFFIX = ".bak"

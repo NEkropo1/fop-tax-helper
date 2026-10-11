@@ -1,3 +1,4 @@
+import json
 import sys
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -6,7 +7,9 @@ from pathlib import Path
 import pytest
 from cryptography.fernet import Fernet
 
+from mono_it_tax.config.constants.store import STORE_SCHEMA_VERSION
 from mono_it_tax.config.enums import Currency, KeyStorage, MarkSource, Period
+from mono_it_tax.domain.account import Account
 from mono_it_tax.domain.income import Mark
 from mono_it_tax.errors import ConfigKeyUnavailableError, StoreUnreadableError
 from mono_it_tax.store.document import DeclarationInput, YearDocument
@@ -16,7 +19,8 @@ from mono_it_tax.store.keys import (
     StoreKeyProvider,
     select_key_provider,
 )
-from mono_it_tax.store.year_store import MIGRATIONS, YearStore
+from mono_it_tax.store.migrations import MIGRATIONS
+from mono_it_tax.store.year_store import YearStore
 from tests.support import make_payment
 
 NOW = datetime(2026, 10, 10, tzinfo=UTC)
@@ -111,7 +115,7 @@ def test_document_from_a_newer_app_is_unreadable(tmp_path: Path) -> None:
     payload = (
         YearDocument(year=2026)
         .model_dump_json()
-        .replace('"schema_version":1', '"schema_version":99')
+        .replace(f'"schema_version":{STORE_SCHEMA_VERSION}', '"schema_version":99')
     )
     store.path(2026).write_bytes(Fernet(key.key).encrypt(payload.encode()))
     with pytest.raises(StoreUnreadableError):
@@ -124,11 +128,42 @@ def test_migrations_run_in_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     old = (
         YearDocument(year=2026)
         .model_dump_json()
-        .replace('"schema_version":1', '"schema_version":0')
+        .replace(f'"schema_version":{STORE_SCHEMA_VERSION}', '"schema_version":0')
     )
     store.path(2026).write_bytes(Fernet(key.key).encrypt(old.encode()))
     monkeypatch.setitem(MIGRATIONS, 0, lambda payload: {**payload, "schema_version": 1})
-    assert store.load(2026).schema_version == 1
+    assert store.load(2026).schema_version == STORE_SCHEMA_VERSION
+
+
+def test_v1_payment_currency_becomes_the_account_currency(tmp_path: Path) -> None:
+    """v1 stored the bank's operation currency as the payment currency (a USD->UAH-card transfer
+    was counted as USD). The migration restores the account currency and keeps the old value."""
+    key = FixedKey()
+    store = YearStore(tmp_path, key)
+    uah_card = Account(id="acc-1", currency_code=980)
+    doc = YearDocument(
+        year=2026,
+        accounts=(uah_card,),
+        payments={
+            "conv": make_payment("conv", currency=Currency.UAH),
+            "orphan": make_payment("orphan", currency=Currency.UAH, account_id="gone"),
+        },
+    )
+    v1 = json.loads(doc.model_dump_json())
+    v1["schema_version"] = 1
+    for payment in v1["payments"].values():
+        del payment["operation_currency"]
+    v1["payments"]["conv"]["currency"] = "USD"  # the bank's currencyCode of the operation
+    v1["payments"]["orphan"]["currency"] = "USD"
+    store.path(2026).write_bytes(Fernet(key.key).encrypt(json.dumps(v1).encode()))
+
+    loaded = store.load(2026)
+
+    assert loaded.schema_version == STORE_SCHEMA_VERSION
+    conv = loaded.payments["conv"]
+    assert (conv.currency, conv.operation_currency) == (Currency.UAH, Currency.USD)
+    orphan = loaded.payments["orphan"]  # account not cached: nothing to correct it with
+    assert (orphan.currency, orphan.operation_currency) == (Currency.USD, Currency.USD)
 
 
 def test_second_save_keeps_a_backup_of_the_previous_version(tmp_path: Path) -> None:

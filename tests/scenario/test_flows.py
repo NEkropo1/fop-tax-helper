@@ -20,7 +20,6 @@ from mono_it_tax.errors import (
     NetworkError,
     RateMissingError,
     TokenRejectedError,
-    UnsupportedCurrencyError,
 )
 from mono_it_tax.pipelines.fetch import months_to_fetch
 from mono_it_tax.services.fetch import FetchProgress
@@ -168,15 +167,19 @@ def test_rejected_token_fails_once_and_stores_nothing(tmp_path: Path) -> None:
     assert app.store.load(2026).ledger == []
 
 
-def test_unsupported_incoming_currency_saves_nothing_for_that_request(tmp_path: Path) -> None:
+def test_conversion_into_a_uah_card_is_counted_in_uah_not_in_the_original_currency(
+    tmp_path: Path,
+) -> None:
     bank = FakeBank()
-    bank.add(UAH_ACC, bank_item("weird", kyiv_ts(2026, 7, 3), 500, currency_code=999))
+    bank.add(
+        UAH_ACC,
+        bank_item("conv", kyiv_ts(2026, 7, 3), 150_000, currency_code=840, operationAmount=3_600),
+    )
     app, _ = make_app(tmp_path, bank)
-    with pytest.raises(UnsupportedCurrencyError):
-        app.fetch_pipeline.execute(M9, app.fetch_pipeline.prepare(M9, [UAH_ACC]))
-    doc = app.store.load(2026)
-    assert doc.ledger == []
-    assert doc.payments == {}
+    app.fetch_pipeline.execute(M9, app.fetch_pipeline.prepare(M9, [UAH_ACC]))
+    payment = app.store.load(2026).payments["conv"]
+    assert (payment.currency, payment.operation_currency) == (Currency.UAH, Currency.USD)
+    assert bank.nbu_calls == []  # no rate is needed for money that is already UAH
 
 
 def test_a_failed_save_never_leaves_coverage_without_data(

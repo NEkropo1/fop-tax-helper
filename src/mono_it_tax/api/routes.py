@@ -122,6 +122,7 @@ def payment_out(
         time=payment.time.astimezone(KYIV).isoformat(timespec="minutes"),
         amount=str(minor_to_decimal(payment.amount)),
         currency=payment.currency.value,
+        operation_currency=payment.operation_currency.value if payment.operation_currency else None,
         description=payment.description,
         comment=payment.comment,
         counter_name=payment.counter_name,

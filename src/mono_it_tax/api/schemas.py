@@ -133,8 +133,9 @@ class PaymentOut(BaseModel):
     handle: str
     month: str
     time: str  # Kyiv local time, ISO
-    amount: str
-    currency: str
+    amount: str  # in the account currency
+    currency: str  # the account currency
+    operation_currency: str | None  # original operation currency (differs on a conversion)
     description: str | None
     comment: str | None
     counter_name: str | None

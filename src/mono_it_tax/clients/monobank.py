@@ -14,7 +14,7 @@ from mono_it_tax.config.constants.api import (
     MONOBANK_PAGE_LIMIT,
     MONOBANK_STATEMENT_PATH,
 )
-from mono_it_tax.config.enums import Service
+from mono_it_tax.config.enums import Currency, Service
 from mono_it_tax.domain.account import ClientInfo
 from mono_it_tax.domain.payment import Payment
 from mono_it_tax.errors import ApiChangedError
@@ -39,7 +39,9 @@ class MonobankClient:
         except ValidationError as exc:
             raise self._changed(MONOBANK_CLIENT_INFO_PATH) from exc
 
-    def statement(self, account_id: str, start: datetime, end: datetime) -> StatementResult:
+    def statement(
+        self, account_id: str, account_currency: Currency, start: datetime, end: datetime
+    ) -> StatementResult:
         """Incoming payments in [start, end]. One call spans at most 31 days + 1 hour (the caller
         requests month-sized ranges); pages of 500 items are followed backwards in time."""
         start_ts, end_ts = int(start.timestamp()), int(end.timestamp())
@@ -53,7 +55,7 @@ class MonobankClient:
             received += len(page)
             for item in page:
                 if self._amount(item) > 0:
-                    payment = self._payment(item, account_id)
+                    payment = self._payment(item, account_id, account_currency)
                     incoming[payment.id] = payment
             if len(page) < MONOBANK_PAGE_LIMIT:
                 break
@@ -77,9 +79,11 @@ class MonobankClient:
         except (KeyError, TypeError, ValueError) as exc:
             raise self._changed(MONOBANK_STATEMENT_PATH) from exc
 
-    def _payment(self, item: dict[str, Any], account_id: str) -> Payment:
+    def _payment(
+        self, item: dict[str, Any], account_id: str, account_currency: Currency
+    ) -> Payment:
         try:
-            return Payment.from_item(item, account_id)
+            return Payment.from_item(item, account_id, account_currency)
         except (ValidationError, KeyError, TypeError, ValueError) as exc:
             raise self._changed(MONOBANK_STATEMENT_PATH) from exc
 

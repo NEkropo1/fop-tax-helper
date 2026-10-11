@@ -79,6 +79,9 @@ export const copy = {
     title: "Що з цього є вашим доходом?",
     hint: "Позначте надходження, які оподатковуються. Shift+клік позначає діапазон. Застосунок лише підказує: рішення завжди за вами.",
     transfer: "Можливо, переказ між власними картками",
+    converted: (amount: string, currency: string) => `конвертація з ${amount} ${currency}`,
+    convertedHint:
+      "Банк уже перерахував суму у валюту рахунку: сума зліва вже в ній, курс НБУ не застосовується.",
     transferHint: "Перевірте, перш ніж рахувати це доходом.",
     marked: (n: number, total: number) => `позначено ${n} з ${total}`,
     confirmMonth: (month: string) => `Готово за ${month}`,

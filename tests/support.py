@@ -145,7 +145,8 @@ def make_payment(
     **extra: Any,
 ) -> Payment:
     code = {Currency.UAH: UAH_CODE, Currency.USD: USD_CODE}[currency]
-    return Payment.from_item(bank_item(item_id, unix_time, amount, code, **extra), account_id)
+    item = bank_item(item_id, unix_time, amount, code, **extra)
+    return Payment.from_item(item, account_id, currency)
 
 
 Handler = Callable[[httpx.Request], httpx.Response]
