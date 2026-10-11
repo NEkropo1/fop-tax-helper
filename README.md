@@ -34,7 +34,31 @@ plausible wrong number.
 
 ## Quick start
 
-Requirements: Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 20.19+ (or 22+).
+### 1. Install the prerequisites
+
+Install these from their official pages and follow their instructions for your system
+(Windows, macOS or Linux):
+
+| Tool | Version | Install guide |
+|---|---|---|
+| Python | 3.12 or newer | <https://www.python.org/downloads/> |
+| uv (Python project manager) | any recent | <https://docs.astral.sh/uv/getting-started/installation/> |
+| Node.js (with npm) | 20.19+ or 22+ | <https://nodejs.org/en/download> |
+| Git (only to clone the repository) | any recent | <https://git-scm.com/downloads> |
+
+Check that they work (open a new terminal after installing):
+
+```bash
+python --version   # or: python3 --version
+uv --version
+node --version
+npm --version
+```
+
+If a command is "not found", the installer's own guide above explains how to fix your `PATH`; it differs per
+system and changes over time, so this README does not repeat it.
+
+### 2. Get and run the app
 
 ```bash
 git clone git@github.com:NEkropo1/fop-tax-helper.git
@@ -97,7 +121,7 @@ How the code is organised and why: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Локальний помічник для ФОП 3 групи з доходом на Monobank: завантажує надходження, ви самі позначаєте,
 що є оподатковуваним доходом, застосунок переводить валюту за курсом НБУ та підказує, що саме вписати в
 декларацію (F0103309) і що сплатити (ЄП, ВЗ, ЄСВ) із датами. Нічого не подає і не сплачує за вас. Дані
-лишаються на вашому комп'ютері й зберігаються зашифрованими. Запуск: `uv sync`, `npm --prefix web install`,
+лишаються на вашому комп'ютері й зберігаються зашифрованими. Спершу встановіть Python 3.12+, uv та Node.js за офіційними посиланнями з розділу «Quick start». Запуск: `uv sync`, `npm --prefix web install`,
 `npm --prefix web run build`, токен у `.env`, `uv run mono-it-tax`. Це не податкова консультація.
 
 ## License
