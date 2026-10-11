@@ -50,6 +50,8 @@ enforces it (`uv run lint-imports`), and also forbids `domain` from importing I/
   tag, never a filter. Results require every involved month to be confirmed ("done"); an unconfirmed
   month would silently count as zero income, so it is an error instead.
 - **Exact money.** `Decimal` everywhere, one half-up rounding to kopiykas, bank integers in minor units.
+  Each receipt is converted at the NBU rate of its own date and rounded to kopiykas; income is the exact sum
+  of those rounded entries, and taxes are rounded once from that sum (rates keep full precision).
   The declaration is cumulative: rows 13/24 come from rows 12/23 of the previous period, which is typed
   from the filed declaration (and validated against the rates) or computed from the stored income.
 - **Fail loud.** Every error has a code and params; the user text is a catalog lookup (what the app tried,

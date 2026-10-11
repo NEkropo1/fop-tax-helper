@@ -15,6 +15,10 @@ form in the cabinet confirms the surrounding rows):
     24   previous period's levy       = previous row 23 (empty in Q1)
     25   military levy payable now    = 23 - 24
 
+Rounding: income arrives as the exact sum of per-receipt UAH entries, each already rounded to
+kopiykas (`domain.income`). Every tax row is then rounded once from that sum; rows 13/24 are
+copied unchanged.
+
 Anything outside this scope raises an AppError instead of producing a plausible wrong number.
 """
 

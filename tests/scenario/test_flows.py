@@ -10,6 +10,7 @@ import pytest
 from mono_it_tax.config.enums import Coverage, Currency, MonthState, Period
 from mono_it_tax.domain.declaration import PreviousDeclaration
 from mono_it_tax.domain.ledger import coverage
+from mono_it_tax.domain.money import round_money
 from mono_it_tax.domain.months import Month
 from mono_it_tax.domain.periods import MonthsSelection, PeriodSelection
 from mono_it_tax.errors import (
@@ -242,6 +243,30 @@ def test_months_mode_converts_foreign_income_once_and_caches_rates(tmp_path: Pat
     app.report_pipeline.months_report(selection, BOTH, app.rules)
     assert len(bank.nbu_calls) == 1  # past rates never change: cached
     assert app.store.load(2026).rates[Currency.USD][date(2026, 8, 15)] == D("40.15")
+
+
+def test_each_receipt_is_rounded_to_kopiykas_before_the_quarter_is_summed(tmp_path: Path) -> None:
+    """Three $100.00 receipts at 41.12345: 3 x round(4112.345) = 12337.05, not round(12337.035)."""
+    bank = FakeBank()
+    bank.nbu_rate_fixed = D("41.12345")
+    for day in (3, 10, 17):
+        bank.add(USD_ACC, bank_item(f"usd{day}", kyiv_ts(2026, 1, day), 10_000, currency_code=840))
+    app, _ = make_app(tmp_path, bank)
+    selection = PeriodSelection(2026, Period.Q1)
+    fetch_all(app, selection, [USD_ACC])
+    mark_everything(app)
+    review_all(app, selection, [USD_ACC])
+
+    rows = app.report_pipeline.declaration_help(2026, Period.Q1, [USD_ACC], app.rules).rows
+
+    entry = round_money(D("100.00") * D("41.12345"))
+    assert entry == D("4112.35")
+    assert rows.income == 3 * entry == D("12337.05")
+    assert rows.tax_at_rate == round_money(rows.income * app.rules.single_tax.rate)
+    assert rows.row_25 == round_money(rows.income * app.rules.military_levy_rate)
+    assert app.store.load(2026).rates[Currency.USD][date(2026, 1, 3)] == D(
+        "41.12345"
+    )  # full precision
 
 
 def test_missing_nbu_rate_is_an_error_not_a_guess(tmp_path: Path) -> None:

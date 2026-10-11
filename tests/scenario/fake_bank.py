@@ -55,15 +55,15 @@ class FakeBank:
         self.statement_calls: list[tuple[str, int, int]] = []
         self.client_info_calls = 0
         self.nbu_calls: list[dict[str, str]] = []
+        self.nbu_rate_fixed: Decimal | None = None  # one rate for every day (rounding scenarios)
         self.nbu_missing_days: set[date] = set()
         self.statement_hook: Callable[[int], httpx.Response | Exception | None] | None = None
 
     def add(self, account: str, item: dict[str, Any]) -> None:
         self.items.setdefault(account, []).append(item)
 
-    @staticmethod
-    def nbu_rate(day: date) -> Decimal:
-        return Decimal("40") + Decimal(day.day) / 100
+    def nbu_rate(self, day: date) -> Decimal:
+        return self.nbu_rate_fixed or Decimal("40") + Decimal(day.day) / 100
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         if request.url.host == NBU_HOST:

@@ -37,7 +37,8 @@ PERIOD_CHAIN = (Period.Q1, Period.H1, Period.M9, Period.Y)
 
 
 def income_in(doc: YearDocument, accounts: Collection[str], months: Sequence[Month]) -> Decimal:
-    """Marked income (UAH, NBU rate on the receipt date) of `accounts` in `months`."""
+    """Marked income of `accounts` in `months`: the exact sum of the per-receipt UAH entries (each
+    converted at the NBU rate of its date and rounded to kopiykas, see `domain.income`)."""
     wanted = set(months)
     total = ZERO
     for mark in doc.marks.values():
