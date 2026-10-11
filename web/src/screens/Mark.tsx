@@ -250,7 +250,7 @@ export function Mark({ flow, onNext, onBack }: Props) {
                   {copy.mark.reopenMonth(month)}
                 </button>
               ) : (
-                <button type="button" onClick={() => void review([month])}>
+                <button type="button" className="confirm" onClick={() => void review([month])}>
                   {copy.mark.confirmMonth(month)}
                 </button>
               )}

@@ -335,6 +335,17 @@ table.fields td:first-child {
   white-space: nowrap;
 }
 
+button.confirm {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  border-color: var(--accent);
+  color: var(--link);
+  font-weight: 600;
+}
+
+button.confirm:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 34%, var(--surface));
+}
+
 label.year-warn {
   color: var(--err);
   font-weight: 600;
