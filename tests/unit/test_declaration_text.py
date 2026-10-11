@@ -40,6 +40,12 @@ def prev_of(rows: DeclarationRows) -> PreviousDeclaration:
     return PreviousDeclaration(rows.period, rows.income, D(0), rows.row_12, rows.row_23)
 
 
+def test_nine_months_period_names_both_cabinet_wordings() -> None:
+    label = PERIOD_LABELS[Period.M9]
+    assert "три квартали" in label
+    assert "9 місяців" in label
+
+
 def test_no_new_income_matches_what_the_cabinet_does() -> None:
     text = render(rows_for(Period.M9, H1_FILED, "0"))
     # 1-3: own data first, then the two rows the cabinet pre-fills, then the employee count

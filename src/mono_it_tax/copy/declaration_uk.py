@@ -16,7 +16,7 @@ from mono_it_tax.domain.periods import increment_months, previous_period
 PERIOD_LABELS: dict[Period, str] = {
     Period.Q1: "I квартал",
     Period.H1: "півріччя",
-    Period.M9: "три квартали",
+    Period.M9: "три квартали або 9 місяців",  # the cabinet shows one of the two wordings
     Period.Y: "рік",
 }
 TAX_LABELS: dict[Tax, str] = {
