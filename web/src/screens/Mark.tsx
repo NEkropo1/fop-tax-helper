@@ -195,13 +195,14 @@ export function Mark({ flow, onNext, onBack }: Props) {
         const marked = states.reduce((n, s) => n + s.marked, 0);
         const done = states.every((s) => s.state === "reviewed");
         return (
-          <section key={month} aria-label={month}>
+          <section key={month} aria-label={month} className={`month ${done ? "done" : ""}`}>
             <div className="month-head">
               <h3>
                 {month}{" "}
                 <span className="muted">{copy.mark.marked(marked, total)}</span>{" "}
                 {done ? <span className="badge ok">{copy.mark.reviewed}</span> : null}
               </h3>
+              {done ? <span className="muted">{copy.mark.locked}</span> : null}
             </div>
             {listed.length === 0 ? <p className="muted">{copy.mark.emptyMonth}</p> : null}
             {listed.map((p) => (

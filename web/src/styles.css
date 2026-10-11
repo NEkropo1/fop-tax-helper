@@ -19,6 +19,9 @@
   --caution-bg: #fff1c2;
   --caution-line: #d9a300;
   --inset: #eef1f6;
+  --month-bg: #f1f4f8;
+  --month-done-bg: #e3edf7;
+  --month-done-line: #9db8d6;
   --font: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -34,6 +37,9 @@
     --caution-bg: rgba(227, 179, 65, 0.1);
     --caution-line: #c9a13a;
     --inset: #151a21;
+    --month-bg: #181e27;
+    --month-done-bg: #1d2a3a;
+    --month-done-line: #3f5d80;
     --rust: #d8895a;
     --line: #2d3644;
     --accent: #5b9bff;
@@ -316,6 +322,24 @@ table.fields td {
 table.fields td:first-child {
   color: var(--muted);
   white-space: nowrap;
+}
+
+.month {
+  background: var(--month-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 12px 0;
+}
+
+.month.done {
+  background: var(--month-done-bg);
+  border-color: var(--month-done-line);
+}
+
+.month h3 {
+  margin: 0;
+  font-size: 1.1rem;
 }
 
 .month-head {
