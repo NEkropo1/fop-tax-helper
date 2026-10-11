@@ -35,15 +35,18 @@ def test_the_account_list_does_not_depend_on_the_tax_year(tmp_path: Path) -> Non
     assert bank.client_info_calls == 1
 
 
-def test_a_refresh_updates_every_stored_year_so_they_never_disagree(tmp_path: Path) -> None:
+def test_a_refresh_touches_only_its_own_year(tmp_path: Path) -> None:
     bank = FakeBank()
     app, _ = make_app(tmp_path, bank)
     app.accounts.accounts(2026)
+    assert app.store.load(2025).accounts == ()  # reading for 2025 copied nothing into its file
     app.accounts.accounts(2025)
+    assert app.store.load(2025).accounts == ()
     bank.accounts.append({"id": "acc-3", "currencyCode": 980, "type": "white"})
     refreshed = app.accounts.accounts(2026, refresh=True)
     assert [a.id for a in refreshed] == ["acc-1", "acc-2", "acc-3"]
-    assert app.accounts.accounts(2025) == refreshed
+    assert len(app.store.load(2026).accounts) == 3
+    assert app.store.years() == [2026]  # no other year's file was created or rewritten
     assert bank.client_info_calls == 2
 
 

@@ -40,8 +40,9 @@ export function Cards({ flow, years, onYear, onHandles, onNext }: Props) {
       })
       .catch(setError);
   };
+  // The card list does not depend on the year: loaded once per visit, never again on a year change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => load(false), [flow.year]);
+  useEffect(() => load(false), []);
 
   const toggle = (handle: string) =>
     onHandles(

@@ -13,17 +13,16 @@ class AccountService:
         self._store = store
 
     def accounts(self, year: int, *, refresh: bool = False) -> tuple[Account, ...]:
-        """The user's accounts, which do not depend on the tax year: the cache of any stored year
-        serves them. One client-info request (counts toward the 60 s limit) only for a first run or
-        an explicit refresh; a refresh updates every stored year so they never disagree."""
+        """The user's accounts. One client-info request (counts toward the 60 s limit) only for a
+        first run or an explicit refresh, which updates just this year's cache. A year that has no
+        cache of its own reads (never copies) the list of another stored year."""
         if not refresh:
             cached = self._cached(year)
             if cached:
-                self._remember(year, cached)
                 return cached
         fresh = self._client.client_info().accounts  # slow (throttle): never inside a store lock
-        for stored in {*self._store.years(), year}:
-            self._remember(stored, fresh, replace=True)
+        with self._store.edit(year) as doc:
+            doc.accounts = fresh
         return fresh
 
     def _cached(self, year: int) -> tuple[Account, ...]:
@@ -34,11 +33,6 @@ class AccountService:
             if other != year and (shared := self._store.load(other).accounts):
                 return shared
         return ()
-
-    def _remember(self, year: int, accounts: tuple[Account, ...], *, replace: bool = False) -> None:
-        with self._store.edit(year) as doc:
-            if replace or not doc.accounts:
-                doc.accounts = accounts
 
     def choose(self, year: int, account_ids: Sequence[str]) -> None:
         """Remember which accounts count for this tax year (one or many)."""
