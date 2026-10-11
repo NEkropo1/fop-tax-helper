@@ -122,8 +122,10 @@ export interface Rules {
   cabinet: string;
   tax_account: string;
   new_declaration: string;
-  declaration_video: string;
-  channels: { name: string; url: string }[];
+  legislation: string;
+  tax_service: string;
+  declaration_video: string | null;
+  recommended_sources: { name: string; url: string }[];
   linkedin: string;
 }
 

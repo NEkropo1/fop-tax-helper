@@ -73,11 +73,19 @@ export function Footer({ meta }: { meta: Meta | null }) {
       </div>
       {rules ? (
         <div>
-          {rules.channels.map((c) => (
-            <span key={c.url}>
-              {copy.footer.channel}: <a href={c.url} target="_blank" rel="noreferrer">{c.name}</a>{" "}
-            </span>
-          ))}
+          {copy.footer.sources}:{" "}
+          <a href={rules.legislation} target="_blank" rel="noreferrer">{copy.footer.legislation}</a>,{" "}
+          <a href={rules.tax_service} target="_blank" rel="noreferrer">{copy.footer.taxService}</a>
+          {rules.recommended_sources.length > 0 ? (
+            <>
+              {" "}· {copy.footer.extraSources}:{" "}
+              {rules.recommended_sources.map((s) => (
+                <span key={s.url}>
+                  <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a>{" "}
+                </span>
+              ))}
+            </>
+          ) : null}{" "}
           · {copy.footer.author}:{" "}
           <a href={rules.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
         </div>
