@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatDate, formatDuration, formatMoney, formatPercent } from "./format";
 import { bulkIds, monthKey, rangeIds } from "./selection";
+import { decodeSaved, encodeSaved, safeStep, STATE_VERSION } from "./persist";
 import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
 
 describe("formatPercent", () => {
@@ -112,5 +113,56 @@ describe("splitFormCode", () => {
   });
   it("returns null when there is no form code", () => {
     expect(splitFormCode("без коду")).toBeNull();
+  });
+});
+
+describe("saved wizard state", () => {
+  const flow = {
+    year: 2026,
+    handles: ["h1"],
+    selection: { year: 2026, kind: "period", period: "Q1" } as const,
+    withHistory: false,
+  };
+  const raw = (over: object = {}) =>
+    JSON.stringify({ v: STATE_VERSION, step: "mark", flow, jobId: null, ...over });
+
+  it("round-trips", () => {
+    const saved = { step: "mark", flow, jobId: "j1" } as const;
+    expect(decodeSaved(encodeSaved(saved))).toEqual(saved);
+  });
+  it("treats anything doubtful as no saved state", () => {
+    expect(decodeSaved(null)).toBeNull();
+    expect(decodeSaved("{not json")).toBeNull();
+    expect(decodeSaved(raw({ v: STATE_VERSION + 1 }))).toBeNull();
+    expect(decodeSaved(raw({ step: "nowhere" }))).toBeNull();
+    expect(decodeSaved(raw({ flow: { ...flow, year: 1 } }))).toBeNull();
+    expect(decodeSaved(raw({ flow: { ...flow, handles: [1] } }))).toBeNull();
+    expect(decodeSaved(raw({ flow: { ...flow, selection: { year: 2025, kind: "period", period: "Q1" } } }))).toBeNull();
+    expect(decodeSaved(raw({ flow: { ...flow, selection: { year: 2026, kind: "months", months: ["2025-01"] } } }))).toBeNull();
+    expect(decodeSaved(raw({ flow: { ...flow, selection: { year: 2026, kind: "period", period: "Z" } } }))).toBeNull();
+  });
+  it("accepts a months selection of the same year", () => {
+    const selection = { year: 2026, kind: "months", months: ["2026-02", "2026-03"] };
+    expect(decodeSaved(raw({ flow: { ...flow, selection } }))?.flow.selection).toEqual(selection);
+  });
+});
+
+describe("safeStep", () => {
+  const base = { year: 2026, handles: ["h"], selection: null, withHistory: false };
+  const chosen = { ...base, selection: { year: 2026, kind: "period", period: "Q1" } as const };
+  it("needs accounts before anything else", () => {
+    expect(safeStep("mark", { ...chosen, handles: [] }, null)).toBe("cards");
+  });
+  it("needs a period before the later steps", () => {
+    expect(safeStep("result", base, null)).toBe("period");
+    expect(safeStep("period", base, null)).toBe("period");
+  });
+  it("never reopens Fetch without a job, and never resumes the data screen", () => {
+    expect(safeStep("fetch", chosen, null)).toBe("confirm");
+    expect(safeStep("fetch", chosen, "j1")).toBe("fetch");
+    expect(safeStep("data", chosen, null)).toBe("cards");
+  });
+  it("keeps a reachable step", () => {
+    expect(safeStep("mark", chosen, null)).toBe("mark");
   });
 });

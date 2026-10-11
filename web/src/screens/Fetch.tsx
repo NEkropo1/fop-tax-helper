@@ -10,11 +10,13 @@ const POLL_MS = 1000;
 
 interface Props {
   flow: Flow;
+  jobId: string | null; // a job this screen already owns (after a reload): attach, never start a second
+  onJob: (id: string) => void;
   onDone: () => void;
   onBack: () => void;
 }
 
-export function Fetch({ flow, onDone, onBack }: Props) {
+export function Fetch({ flow, jobId, onJob, onDone, onBack }: Props) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<unknown>(null);
   const started = useRef(false);
@@ -23,7 +25,18 @@ export function Fetch({ flow, onDone, onBack }: Props) {
     const scope = scopeOf(flow);
     if (scope === null || started.current) return;
     started.current = true;
-    api.startFetch(scope).then(setJob).catch(setError);
+    if (jobId !== null) {
+      // The server forgot the job (restarted): go back and let the user plan again; nothing is lost.
+      api.job(jobId).then(setJob).catch(onBack);
+      return;
+    }
+    api
+      .startFetch(scope)
+      .then((newJob) => {
+        onJob(newJob.id);
+        setJob(newJob);
+      })
+      .catch(setError);
   }, [flow]);
 
   useEffect(() => {
