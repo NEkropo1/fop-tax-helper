@@ -120,6 +120,17 @@ h2 {
   font-weight: 600;
 }
 
+.steps li button.step-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .steps li.done {
   color: var(--ok);
 }

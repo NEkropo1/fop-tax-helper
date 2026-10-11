@@ -17,7 +17,7 @@ import { Card, ErrorBox, Footer, Steps, type Step } from "./ui";
 export function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [error, setError] = useState<unknown>(null);
-  const [step, setStep] = useState<Step>("cards");
+  const [step, setStep] = useState<Step>("cards"); // set directly only by history/resume: see go()
   const [flow, setFlow] = useState<Flow | null>(null);
   const [folder, setFolder] = useState<string | null>(null);
   const [returnTo, setReturnTo] = useState<Step>("cards");
@@ -53,6 +53,8 @@ export function App() {
           setJobId(saved.jobId);
           setStep(safeStep(saved.step, saved.flow, saved.jobId));
         }
+        // The page's first history entry is the step we start on, so "back" never lands on nothing.
+        window.history.replaceState({ step: saved ? safeStep(saved.step, saved.flow, saved.jobId) : "cards" }, "");
       })
       .catch(setError);
   }, [resume]);
@@ -69,6 +71,21 @@ export function App() {
     if (meta?.ready) api.data().then((d) => setFolder(d.folder)).catch(() => undefined);
   }, [meta]);
 
+  /** A step change is a history entry, so the browser's back/forward arrows walk the wizard. */
+  const go = (next: Step) => {
+    setStep(next);
+    window.history.pushState({ step: next }, "");
+  };
+
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => {
+      const target = (event.state as { step?: Step } | null)?.step;
+      if (flow !== null && target !== undefined) setStep(safeStep(target, flow, jobId));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [flow, jobId]);
+
   useEffect(() => {
     if (meta?.ready && flow !== null) storeSaved({ step, flow, jobId });
   }, [meta, step, flow, jobId]);
@@ -78,12 +95,12 @@ export function App() {
     clearSaved();
     setJobId(null);
     setFlow(initialFlow(flow?.year ?? new Date().getFullYear()));
-    setStep("cards");
+    go("cards");
   };
 
   const openData = () => {
     setReturnTo(step === "data" ? "cards" : step);
-    setStep("data");
+    go("data");
   };
 
   let body;
@@ -108,7 +125,7 @@ export function App() {
       </Card>
     );
   } else if (step === "data") {
-    body = <MyData onClose={() => setStep(returnTo)} />;
+    body = <MyData onClose={() => go(returnTo)} />;
   } else if (step === "cards") {
     body = (
       <Cards
@@ -116,17 +133,17 @@ export function App() {
         years={meta.years}
         onYear={(year) => patch({ year, handles: [], selection: null })}
         onHandles={(handles) => patch({ handles })}
-        onNext={() => setStep("period")}
+        onNext={() => go("period")}
       />
     );
   } else if (step === "period") {
     body = (
       <PeriodScreen
         flow={flow}
-        onBack={() => setStep("cards")}
+        onBack={() => go("cards")}
         onSelect={(selection: Selection) => {
           patch({ selection, withHistory: false });
-          setStep("confirm");
+          go("confirm");
         }}
       />
     );
@@ -135,9 +152,12 @@ export function App() {
       <Confirm
         flow={flow}
         folder={folder}
-        onBack={() => setStep(flow.withHistory ? "result" : "period")}
-        onGo={() => setStep("fetch")}
-        onSkip={() => setStep("mark")}
+        onBack={() => go(flow.withHistory ? "result" : "period")}
+        onGo={() => {
+          setJobId(null); // a fresh start, not the job of an earlier visit
+          go("fetch");
+        }}
+        onSkip={() => go("mark")}
       />
     );
   } else if (step === "fetch") {
@@ -148,27 +168,27 @@ export function App() {
         onJob={setJobId}
         onBack={() => {
           setJobId(null);
-          setStep("confirm");
+          go("confirm");
         }}
         onDone={() => {
           setJobId(null);
-          setStep("mark");
+          go("mark");
         }}
       />
     );
   } else if (step === "mark") {
-    body = <Mark flow={flow} onBack={() => setStep("confirm")} onNext={() => setStep("result")} />;
+    body = <Mark flow={flow} onBack={() => go("confirm")} onNext={() => go("result")} />;
   } else {
     body = (
       <Result
         key={`${flow.withHistory}`}
         flow={flow}
         rules={meta.rules}
-        onBack={() => setStep("mark")}
+        onBack={() => go("mark")}
         onStartOver={reset}
         onNeedHistory={() => {
           patch({ withHistory: true });
-          setStep("confirm");
+          go("confirm");
         }}
       />
     );
@@ -189,7 +209,7 @@ export function App() {
           </div>
         ) : null}
       </header>
-      {meta?.ready && step !== "data" ? <Steps current={step} /> : null}
+      {meta?.ready && step !== "data" ? <Steps current={step} onGo={go} /> : null}
       {body}
       <Footer meta={meta} />
     </div>

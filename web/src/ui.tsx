@@ -9,7 +9,8 @@ export type Step = "cards" | "period" | "confirm" | "fetch" | "mark" | "result" 
 
 const FLOW: Step[] = ["cards", "period", "confirm", "fetch", "mark", "result"];
 
-export function Steps({ current }: { current: Step }) {
+/** Finished steps are links back; Fetch is not one, since opening it would start bank requests. */
+export function Steps({ current, onGo }: { current: Step; onGo: (step: Step) => void }) {
   const index = FLOW.indexOf(current);
   return (
     <ol className="steps" aria-label="Кроки">
@@ -19,7 +20,15 @@ export function Steps({ current }: { current: Step }) {
           className={i === index ? "current" : i < index ? "done" : ""}
           aria-current={i === index ? "step" : undefined}
         >
-          {i + 1}. {copy.steps[step as keyof typeof copy.steps]}
+          {i < index && step !== "fetch" ? (
+            <button type="button" className="step-link" onClick={() => onGo(step)}>
+              {i + 1}. {copy.steps[step as keyof typeof copy.steps]}
+            </button>
+          ) : (
+            <>
+              {i + 1}. {copy.steps[step as keyof typeof copy.steps]}
+            </>
+          )}
         </li>
       ))}
     </ol>
