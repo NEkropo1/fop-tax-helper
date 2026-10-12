@@ -183,7 +183,6 @@ def meta(year: int | None = None, state: ApiState = Depends(authorized)) -> Meta
                 new_declaration=rules.links.new_declaration,
                 legislation=rules.links.legislation,
                 tax_service=rules.links.tax_service,
-                declaration_video=rules.links.declaration_video,
                 recommended_sources=[
                     {"name": s.name, "url": s.url} for s in rules.recommended_sources
                 ],

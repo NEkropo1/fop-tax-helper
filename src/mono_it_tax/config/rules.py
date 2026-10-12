@@ -70,7 +70,6 @@ class Links(_Frozen):
     requisites_xlsx: str
     legislation: str  # the Tax Code: the binding source for every figure
     tax_service: str  # the tax service site (official explanations, forms)
-    declaration_video: str | None = None  # optional third-party walkthrough; omitted by default
 
 
 class RecommendedSource(_Frozen):

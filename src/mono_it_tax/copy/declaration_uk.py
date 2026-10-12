@@ -120,13 +120,12 @@ FILL_PAYMENTS_HEADER = (
     "автоматизуємо):"
 )
 FILL_PAYMENT_LINE = "   - {label}: {what}, до {due:%d.%m.%Y} (код платежу {code})"
-VIDEO_LINE = "Відео-розбір заповнення декларації: {video}"
 SOURCES_LINE = (
     "Інформація може бути неактуальною. Звіряйте розрахунки та строки з чинним законодавством "
     "({legislation}), сайтом ДПС ({tax_service}) і зручними для вас професійними джерелами; за "
     "потреби — з бухгалтером. Рішення й відповідальність за декларацію — ваші."
 )
-EXTRA_SOURCES_LINE = "Додаткові джерела: {sources}."
+EXTRA_SOURCES_LINE = "Особисто від себе рекомендую: {sources}."
 CONTACT_LINE = "Помітили неактуальне? Напишіть: {linkedin}"
 RULES_LINE = "Правила станом на {updated_on:%d.%m.%Y} (версія {version}). {disclaimer}"
 
@@ -244,8 +243,6 @@ def sources_lines(rules: Rules) -> list[str]:
 
 def _footer_lines(rules: Rules) -> list[str]:
     lines: list[str] = []
-    if rules.links.declaration_video:
-        lines.append(VIDEO_LINE.format(video=rules.links.declaration_video))
     lines.extend(sources_lines(rules))
     lines.append(CONTACT_LINE.format(linkedin=rules.contact.linkedin))
     lines.append(

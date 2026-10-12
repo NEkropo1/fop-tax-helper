@@ -174,19 +174,16 @@ def test_footer_points_to_the_law_and_official_sites_and_names_no_third_party() 
     assert RULES.links.legislation in text
     assert RULES.links.tax_service in text
     assert "бухгалтером" in text
-    assert "Додаткові джерела" not in text
-    assert "Відео-розбір" not in text
+    assert "Особисто від себе рекомендую" not in text
 
 
-def test_third_party_material_returns_with_one_config_entry() -> None:
-    """Quick restore: listing a source / a video in the rules file is all it takes."""
+def test_a_personal_recommendation_appears_when_the_rules_list_one() -> None:
+    """A source listed in the rules file is mentioned as a personal recommendation."""
     restored = make_rules(
         recommended_sources=(RecommendedSource(name="Name", url="https://example.test/ch"),),
-        links=RULES.links.model_copy(update={"declaration_video": "https://example.test/v"}),
     )
     text = render(rows_for(Period.Q1, None, "100", restored), restored)
-    assert "Додаткові джерела: Name (https://example.test/ch)." in text
-    assert "Відео-розбір заповнення декларації: https://example.test/v" in text
+    assert "Особисто від себе рекомендую: Name (https://example.test/ch)." in text
     assert restored.links.legislation in text  # the official sources never go away
 
 
@@ -195,4 +192,4 @@ def test_estimate_text_also_lists_the_official_sources() -> None:
     est = estimate(D("1000"), 1, rules)
     text = format_estimate(est, rules)
     assert rules.links.legislation in text
-    assert "Додаткові джерела" not in text
+    assert "Особисто від себе рекомендую" not in text

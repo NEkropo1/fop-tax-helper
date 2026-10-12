@@ -13,6 +13,9 @@ It does **not** file anything and does **not** pay anything: you do both yoursel
 > ([`data/rules/2026.yaml`](data/rules/2026.yaml)) with their sources. Check the numbers against the
 > cabinet and the current legislation ([Tax Code](https://zakon.rada.gov.ua/laws/show/2755-17),
 > [tax service](https://tax.gov.ua/)) before filing, and ask an accountant when in doubt.
+>
+> Personal recommendation (shared with the owner's permission): the
+> [Смокович channel](https://www.youtube.com/@-Smokovych/).
 
 ## What it does
 

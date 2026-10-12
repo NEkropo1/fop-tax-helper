@@ -124,7 +124,6 @@ export interface Rules {
   new_declaration: string;
   legislation: string;
   tax_service: string;
-  declaration_video: string | null;
   recommended_sources: { name: string; url: string }[];
   linkedin: string;
 }

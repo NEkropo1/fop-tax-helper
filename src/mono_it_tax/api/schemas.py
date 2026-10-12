@@ -207,7 +207,6 @@ class RulesOut(BaseModel):
     new_declaration: str
     legislation: str
     tax_service: str
-    declaration_video: str | None
     recommended_sources: list[dict[str, str]]
     linkedin: str
 

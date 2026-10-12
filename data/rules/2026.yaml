@@ -61,10 +61,10 @@ links:
   requisites_xlsx: "https://tax.gov.ua/rahunki-dlya-splati-platejiv"
   legislation: "https://zakon.rada.gov.ua/laws/show/2755-17"   # Tax Code of Ukraine
   tax_service: "https://tax.gov.ua/"
-  # declaration_video: "https://example.com/watch"   # optional third-party walkthrough
-# Optional third-party material (channels, blogs). Add an entry ONLY with its owner's consent:
-#   - {name: "Name", url: "https://example.com/"}
-recommended_sources: []
+# Personal recommendations (third-party material). Add an entry ONLY with its owner's consent.
+# Used with the owner's permission (confirmed 2026-10-12): a link to the channel, nothing more.
+recommended_sources:
+  - {name: "канал Смоковича", url: "https://www.youtube.com/@-Smokovych/"}
 contact: {linkedin: "https://www.linkedin.com/in/paul-savchuk-ne/"}
 # Hint only (the human decides): MCC "money transfer" + wording seen on real statements.
 internal_transfer:
