@@ -25,6 +25,8 @@ const URL_PATTERN = /https?:\/\/[^\s)]+/g;
 const TRAILING_PUNCTUATION = /[.,;:]+$/;
 const VALUE_SEPARATOR = " = ";
 const FORM_CODE = /\bF\d{7}\b/;
+const ERROR_PREFIX = "ПОМИЛКА:"; // see ERROR_PREFIX in copy/declaration_uk.py
+const STEP_AMOUNT = /= (\d[\d ]*\.\d{2}) грн/;
 
 export function parseDeclaration(text: string): ParsedDeclaration {
   const [header = "", stepBlock = "", ...rest] = text.split(BLOCK_SEPARATOR).map((b) => b.trim());
@@ -81,4 +83,16 @@ export function splitFormCode(line: string): { before: string; code: string; aft
     code: match[0],
     after: line.slice(start + match[0].length),
   };
+}
+
+export function isErrorLine(line: string): boolean {
+  return line.startsWith(ERROR_PREFIX);
+}
+
+// The amount a step tells to type ("= 161 550.72 грн"), only when it is the given raw number
+// (the API's own digits, "161550.72"): the copy button then offers that number, not a re-parsed text.
+export function copyableAmount(stepText: string, raw: string): string | null {
+  const match = STEP_AMOUNT.exec(stepText);
+  if (match === null || match[1] === undefined) return null;
+  return match[1].replace(/ /g, "") === raw ? raw : null;
 }

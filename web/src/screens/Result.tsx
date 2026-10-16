@@ -65,7 +65,11 @@ function DeclarationView({ declaration, rules }: { declaration: Declaration; rul
   return (
     <>
       {declaration.preliminary ? <div className="notice warn">{copy.result.preliminary}</div> : null}
-      <DeclarationText text={declaration.text} newDeclarationUrl={rules?.new_declaration ?? null} />
+      <DeclarationText
+        text={declaration.text}
+        newDeclarationUrl={rules?.new_declaration ?? null}
+        income={declaration.rows.income ?? ""}
+      />
       <h3 className="section-label">{copy.result.paymentsLabel}</h3>
       <table className="fields">
         <tbody>

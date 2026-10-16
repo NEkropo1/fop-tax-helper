@@ -59,7 +59,8 @@ STEP_PREFILLED_FIRST = (
 )
 STEP_EMPLOYEES = (
     "3. У пункті {employees} (фактична чисельність найманих працівників) впишіть кількість: для "
-    "більшості ФОП, і для цього застосунку, це 0."
+    "більшості ФОП це 0.\n"
+    "   Так, впишіть 0 і натисніть Enter."  # a highlighted line: easy to miss, the cabinet wants it
 )
 STEP_INCOME = (
     "4. Далі заповнюйте рядок {income_row} (розділ IV, ставка {rate:.0%}; {regime_note}): впишіть "
@@ -74,12 +75,16 @@ INCOME_NOTE_NEW = (
 )
 INCOME_NOTE_FIRST = "Це дохід за {new_months}."
 STEP_AUTOFILL = "5. Одразу після введення кабінет сам заповнить рядки:"
-AUTOFILL_ALWAYS = (
+AUTOFILL_INCOME = (
     "   - {total_income} (усього доходу) = {income}",
     "   - {tax_row} (податок за ставкою {rate:.0%}) = {tax_at_rate}",
     "   - {tax_total} (нараховано всього за період) = {row_12}",
-    "   - {levy_total} (військовий збір за період) = {row_23}",
 )
+AUTOFILL_TAX_PREVIOUS = (
+    "   - {tax_previous} (єдиний податок за попередній період — це рядок {tax_total} попередньої "
+    "декларації) = {row_13}"
+)
+AUTOFILL_LEVY_TOTAL = "   - {levy_total} (військовий збір за період) = {row_23}"
 AUTOFILL_TAX_DUE = (
     "   - {tax_due_base} (до сплати за підсумками періоду, {tax_total} - {tax_previous}) "
     "= {row_14}",
@@ -97,6 +102,13 @@ AUTOFILL_LEVY_DUE_EMPTY = (
     "   - рядок {levy_due} лишається порожнім: це те саме, що 0,00 — військового збору до сплати "
     "немає."
 )
+ERROR_PREFIX = "ПОМИЛКА:"  # the screen shows lines starting with it as a red error
+AUTOFILL_NEGATIVE_ERROR = (
+    "   - "
+    + ERROR_PREFIX
+    + " рядок {row} вийшов від'ємним ({value}) — отримано хибний розрахунок. "
+    "Повторіть процес або напишіть автору: це значення не може бути від'ємним."
+)
 AUTOFILL_WARNING = (
     "   Якщо цифри відрізняються — НЕ подавайте декларацію: перевірте введені дані (і що рядок "
     "{tax_previous} справді дорівнює рядку {tax_total} попередньої декларації)."
@@ -104,6 +116,10 @@ AUTOFILL_WARNING = (
 STEP_EMPTY_ROWS = (
     "6. Решта рядків мають лишитись порожніми або 0,00: {empty_rows}. Якщо в якомусь з них щось "
     "з'явилось — НЕ подавайте декларацію."
+)
+STEP_SUBMIT = (
+    "7. Якщо все правильно і рядки збігаються — поверніться до верху сторінки й натисніть "
+    "«Перевірити». Якщо все добре, вам залишилось підписати і відправити декларацію."
 )
 ESV_ROW_NOT_NEEDED = (
     "Рядок {esv_due} і Додаток 1 (ЄСВ) у цій декларації не заповнюються: вони потрібні лише в "
@@ -201,14 +217,41 @@ def _income_note(rows: DeclarationRows, values: Values) -> str:
     return INCOME_NOTE_NEW.format(**values)
 
 
+def _due_lines(
+    amount: Decimal, row: str, due_lines: tuple[str, ...], empty_line: str, values: Values
+) -> list[str]:
+    """Payable rows by sign: appear with an amount, stay empty (= 0.00) on exactly zero, and a
+    negative can only be a calculation fault, so it is reported instead of explained away."""
+    if amount > 0:
+        return [line.format(**values) for line in due_lines]
+    if amount == 0:
+        return [empty_line.format(**values)]
+    return [AUTOFILL_NEGATIVE_ERROR.format(row=row, value=format_money(amount))]
+
+
 def _autofill_lines(rows: DeclarationRows, values: Values) -> list[str]:
-    lines = [line.format(**values) for line in AUTOFILL_ALWAYS]
-    if rows.row_14 > 0:
-        lines.extend(line.format(**values) for line in AUTOFILL_TAX_DUE)
-    else:
-        lines.append(AUTOFILL_TAX_DUE_EMPTY.format(**values))
-    levy_line = AUTOFILL_LEVY_DUE if rows.row_25 > 0 else AUTOFILL_LEVY_DUE_EMPTY
-    lines.append(levy_line.format(**values))
+    lines = [line.format(**values) for line in AUTOFILL_INCOME]
+    if previous_period(rows.period) is not None:
+        lines.append(AUTOFILL_TAX_PREVIOUS.format(**values))
+    lines.append(AUTOFILL_LEVY_TOTAL.format(**values))
+    lines.extend(
+        _due_lines(
+            rows.row_14,
+            f"{values['tax_due_base']} / {values['tax_due']}",
+            AUTOFILL_TAX_DUE,
+            AUTOFILL_TAX_DUE_EMPTY,
+            values,
+        )
+    )
+    lines.extend(
+        _due_lines(
+            rows.row_25,
+            str(values["levy_due"]),
+            (AUTOFILL_LEVY_DUE,),
+            AUTOFILL_LEVY_DUE_EMPTY,
+            values,
+        )
+    )
     lines.append(AUTOFILL_WARNING.format(**values))
     return lines
 
@@ -268,6 +311,7 @@ def fill_instructions(rows: DeclarationRows, plan: PaymentPlan, rules: Rules) ->
         STEP_AUTOFILL.format(**values),
         *_autofill_lines(rows, values),
         STEP_EMPTY_ROWS.format(**values),
+        STEP_SUBMIT,
         "",
         _esv_note(rows.period, values, rules),
         "",

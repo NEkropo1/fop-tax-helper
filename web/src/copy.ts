@@ -132,6 +132,8 @@ export const copy = {
     calculate: "Порахувати",
     preliminary: "Період ще не завершено: цифри попередні.",
     dueDeclaration: "Подати декларацію до",
+    copyAmount: "Копіювати суму",
+    copied: "Скопійовано",
     stepsLabel: "Заповнення декларації",
     createHere: "Створити декларацію:",
     notesLabel: "Також важливо",

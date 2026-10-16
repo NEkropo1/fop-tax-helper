@@ -6,7 +6,7 @@ import type { Account } from "./types";
 import { cardsChanged, selectionExists } from "./accounts";
 import { defaultPeriod, rulesFallbackYear } from "./flow";
 import { decodeSaved, encodeSaved, safeStep, STATE_VERSION } from "./persist";
-import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
+import { copyableAmount, isErrorLine, linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
 
 describe("formatPercent", () => {
   it("shows the rules-file fractions as plain percents", () => {
@@ -219,5 +219,18 @@ describe("defaultPeriod", () => {
   it("uses the full year for a past year and the first period for a future one", () => {
     expect(defaultPeriod(2025, on("2026-01-15"))).toBe("Y");
     expect(defaultPeriod(2027, on("2026-10-16"))).toBe("Q1");
+  });
+});
+
+describe("copyableAmount", () => {
+  const step = "Далі заповнюйте рядок 06: дохід за ВЕСЬ період = 161 550.72 грн. Нового доходу немає.";
+  it("offers the raw number only when the step's amount is that number", () => {
+    expect(copyableAmount(step, "161550.72")).toBe("161550.72");
+    expect(copyableAmount(step, "161550.73")).toBeNull();
+    expect(copyableAmount("Перевірте дані", "161550.72")).toBeNull();
+  });
+  it("recognises error lines", () => {
+    expect(isErrorLine("ПОМИЛКА: рядок 14 вийшов від'ємним")).toBe(true);
+    expect(isErrorLine("08 (усього доходу) = 1.00")).toBe(false);
   });
 });
