@@ -6,7 +6,7 @@ import type { Account } from "./types";
 import { cardsChanged, selectionExists } from "./accounts";
 import { rulesFallbackYear } from "./flow";
 import { decodeSaved, encodeSaved, safeStep, STATE_VERSION } from "./persist";
-import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
+import { copyableAmount, isErrorLine, linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
 
 describe("formatPercent", () => {
   it("shows the rules-file fractions as plain percents", () => {
@@ -203,5 +203,18 @@ describe("safeStep", () => {
   });
   it("keeps a reachable step", () => {
     expect(safeStep("mark", chosen, null)).toBe("mark");
+  });
+});
+
+describe("copyableAmount", () => {
+  const step = "Далі заповнюйте рядок 06: дохід за ВЕСЬ період = 161 550.72 грн. Нового доходу немає.";
+  it("offers the raw number only when the step's amount is that number", () => {
+    expect(copyableAmount(step, "161550.72")).toBe("161550.72");
+    expect(copyableAmount(step, "161550.73")).toBeNull();
+    expect(copyableAmount("Перевірте дані", "161550.72")).toBeNull();
+  });
+  it("recognises error lines", () => {
+    expect(isErrorLine("ПОМИЛКА: рядок 14 вийшов від'ємним")).toBe(true);
+    expect(isErrorLine("08 (усього доходу) = 1.00")).toBe(false);
   });
 });

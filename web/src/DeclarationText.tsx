@@ -1,5 +1,7 @@
+import { useState } from "react";
+
 import { copy } from "./copy";
-import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
+import { copyableAmount, isErrorLine, linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
 
 function Linkified({ line }: { line: string }) {
   return (
@@ -17,7 +19,23 @@ function Linkified({ line }: { line: string }) {
   );
 }
 
+function CopyButton({ value }: { value: string }) {
+  const [done, setDone] = useState(false);
+  const onClick = () => {
+    void navigator.clipboard.writeText(value).then(() => {
+      setDone(true);
+      window.setTimeout(() => setDone(false), 2000);
+    });
+  };
+  return (
+    <button type="button" className="copy-button" onClick={onClick}>
+      {done ? copy.result.copied : copy.result.copyAmount}
+    </button>
+  );
+}
+
 function Bullet({ line }: { line: string }) {
+  if (isErrorLine(line)) return <li className="row-error">{line}</li>;
   const { label, value } = splitValue(line);
   return (
     <li>
@@ -27,7 +45,13 @@ function Bullet({ line }: { line: string }) {
   );
 }
 
-export function DeclarationText({ text, newDeclarationUrl }: { text: string; newDeclarationUrl: string | null }) {
+interface Props {
+  text: string;
+  newDeclarationUrl: string | null;
+  income: string; // the income row exactly as the API sends it, e.g. "161550.72"
+}
+
+export function DeclarationText({ text, newDeclarationUrl, income }: Props) {
   const parsed = parseDeclaration(text);
   const header = splitFormCode(parsed.header);
   return (
@@ -57,6 +81,7 @@ export function DeclarationText({ text, newDeclarationUrl }: { text: string; new
           {parsed.steps.map((step, i) => (
             <li key={i}>
               <p>{step.text}</p>
+              {copyableAmount(step.text, income) !== null ? <CopyButton value={income} /> : null}
               {step.bullets.length > 0 ? (
                 <ul className="doc-rows">
                   {step.bullets.map((b, j) => (

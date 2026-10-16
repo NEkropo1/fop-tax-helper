@@ -1,6 +1,7 @@
 """The help text must be a faithful rendering of the recorded state: every number from the rows
 object, every row number from the rules, wording branches from the state (not hardcoded)."""
 
+from dataclasses import replace
 from decimal import Decimal
 
 from hypothesis import given
@@ -193,3 +194,36 @@ def test_estimate_text_also_lists_the_official_sources() -> None:
     text = format_estimate(est, rules)
     assert rules.links.legislation in text
     assert "Особисто від себе рекомендую" not in text
+
+
+def test_employees_step_has_a_highlighted_line_about_entering_zero() -> None:
+    text = render(rows_for(Period.M9, H1_FILED, "0"))
+    assert "це 0.\n   Так, впишіть 0 і натисніть Enter." in text
+    assert "і для цього застосунку" not in text
+
+
+def test_prefilled_tax_row_13_is_listed_with_where_it_comes_from() -> None:
+    text = render(rows_for(Period.M9, H1_FILED, "0"))
+    assert (
+        "   - 13 (єдиний податок за попередній період — це рядок 12 попередньої декларації)" in text
+    )
+    assert "= 6 000.02" in text
+    assert "   - 13 (" not in render(rows_for(Period.Q1, None, "1000"))
+
+
+def test_empty_messages_appear_only_on_exact_zero() -> None:
+    with_new = render(rows_for(Period.M9, H1_FILED, "20000.01"))
+    assert "лишаються порожніми" not in with_new
+    assert "лишається порожнім" not in with_new
+    assert "ПОМИЛКА" not in with_new
+
+
+def test_negative_payable_rows_raise_an_error_line_instead_of_the_empty_message() -> None:
+    rows = rows_for(Period.M9, H1_FILED, "0")
+    broken = replace(rows, row_14=D("-1.00"), row_25=D("-2.00"))
+    text = render(broken)
+    assert text.count("ПОМИЛКА:") == 2
+    assert "вийшов від'ємним (-1.00)" in text
+    assert "напишіть автору" in text
+    assert "лишаються порожніми" not in text
+    assert "лишається порожнім" not in text
