@@ -4,7 +4,7 @@ import { formatDate, formatDuration, formatMoney, formatPercent } from "./format
 import { bulkIds, monthKey, rangeIds } from "./selection";
 import type { Account } from "./types";
 import { cardsChanged, selectionExists } from "./accounts";
-import { rulesFallbackYear } from "./flow";
+import { defaultPeriod, rulesFallbackYear } from "./flow";
 import { decodeSaved, encodeSaved, safeStep, STATE_VERSION } from "./persist";
 import { linkify, parseDeclaration, splitFormCode, splitValue } from "./declaration_parse";
 
@@ -203,5 +203,21 @@ describe("safeStep", () => {
   });
   it("keeps a reachable step", () => {
     expect(safeStep("mark", chosen, null)).toBe("mark");
+  });
+});
+
+describe("defaultPeriod", () => {
+  const on = (iso: string) => new Date(`${iso}T12:00:00`);
+  it("picks the latest period that is already over in the current year", () => {
+    expect(defaultPeriod(2026, on("2026-02-10"))).toBe("Q1");
+    expect(defaultPeriod(2026, on("2026-05-10"))).toBe("Q1");
+    expect(defaultPeriod(2026, on("2026-07-01"))).toBe("H1");
+    expect(defaultPeriod(2026, on("2026-09-30"))).toBe("H1");
+    expect(defaultPeriod(2026, on("2026-10-16"))).toBe("M9");
+    expect(defaultPeriod(2026, on("2026-12-31"))).toBe("M9");
+  });
+  it("uses the full year for a past year and the first period for a future one", () => {
+    expect(defaultPeriod(2025, on("2026-01-15"))).toBe("Y");
+    expect(defaultPeriod(2027, on("2026-10-16"))).toBe("Q1");
   });
 });
