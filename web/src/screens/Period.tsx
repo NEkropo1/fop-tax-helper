@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { copy } from "../copy";
-import type { Flow } from "../flow";
+import { defaultPeriod, type Flow } from "../flow";
 import { monthKey } from "../selection";
 import type { Period as PeriodName, Selection } from "../types";
 import { Card } from "../ui";
@@ -23,7 +23,7 @@ export function PeriodScreen({ flow, onSelect, onBack }: Props) {
     flow.selection?.kind === "months" ? "months" : "period",
   );
   const [period, setPeriod] = useState<PeriodName>(
-    flow.selection?.kind === "period" ? flow.selection.period : "M9",
+    flow.selection?.kind === "period" ? flow.selection.period : defaultPeriod(flow.year, new Date()),
   );
   const [months, setMonths] = useState<string[]>(
     flow.selection?.kind === "months" ? flow.selection.months : [],
